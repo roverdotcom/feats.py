@@ -1,5 +1,6 @@
 from typings import Dict, List
 
+from .storage import Storage
 from .feature import Feature
 from .meta import Definition
 from .segment import Segment
@@ -7,9 +8,11 @@ from .state import DefaultState, FeatureState
 
 
 class FeatureHandle:
-    def __init__(self, registry, feature):
-        self.registry = registry
+    def __init__(self, app: 'App', name: str, feature: Feature):
+        self.app = app
+        self.name = name
         self.feature = feature
+        self.default_state = DefaultState(ft.default_implementation.name)
 
     def create(self, *args):
         """
@@ -18,20 +21,28 @@ class FeatureHandle:
         The implementation is found using any configured segmentations and
         selectors for the feature.
         """
-        impl = self.registry.states[self.feature].select_implementation(*args)
+        states = self.app.storage[self.name]
+        try:
+            state = states[-1]
+        except IndexError:
+            state = self.default_state
+
         return impl(*args)
 
 
-class Registry:
+class App:
     """
-    Registry is where all features, segments and the configurations for them
-    are held. An application can have multiple registries, but typically
-    will use the default one created in __init__.py.
+    App is where all features, segments and the configurations for them
+    are held. An application can have multiple app, but typically will use
+    a single one.
     """
-    def __init__(self):
+    def __init__(self, *, storage: Storage):
+        """
+        storage: where to store and retrieve feature states
+        """
         # TODO Index by input classes?
         self.segments: List[Segment] = []
-        self.states: Dict[Feature, FeatureState] = []
+        self.storage = storage
 
     def feature(self):
         """
@@ -59,7 +70,6 @@ class Registry:
         def wrap(cls):
             definition = Definition(cls())
             ft = Feature(definition)
-            self.states[ft] = DefaultState(ft.default_implementation)
             return FeatureHandle(self, ft)
 
         return wrap
@@ -74,7 +84,8 @@ class Registry:
         return wrap
 
     def configure_feature(self, feature: Feature, state: FeatureState):
-        self.states[feature] = state
+        # TODO: Validate state against segments
+        self.storage[feature].append(state)
 
     def find_segments(self, input_cls):
         """
