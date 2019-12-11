@@ -7,9 +7,12 @@ class Implementation:
         typings = fn.__annotations__.copy()
         # return is a special typing specific to the return value of the fn
         output_type = typings.pop('return', None)
-        input_arg = fn.__annotations__.popitem()
+        try:
+            input_arg = fn.__annotations__.popitem()
+        except KeyError:
+            input_arg = None
 
-        has_output = self.output_type is not None
+        has_output = output_type is not None
         has_input = input_arg is not None
         if not has_output or not has_input:
             # TODO: Handle no input argument
