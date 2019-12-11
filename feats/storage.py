@@ -1,5 +1,6 @@
 from typing import MutableMapping, MutableSequence
 from .state import FeatureState
+from collections import defaultdict
 
 Storage = MutableMapping[str, MutableSequence[FeatureState]]
 """

@@ -1,4 +1,4 @@
-from typings import Dict, List
+from typing import List
 
 from .storage import Storage
 from .feature import Feature
@@ -12,7 +12,7 @@ class FeatureHandle:
         self.app = app
         self.name = name
         self.feature = feature
-        self.default_state = DefaultState(ft.default_implementation.name)
+        self.default_state = DefaultState(feature.default_implementation.name)
 
     def create(self, *args):
         """
@@ -27,7 +27,7 @@ class FeatureHandle:
         except IndexError:
             state = self.default_state
 
-        return impl(*args)
+        return state.select_implementation(*args)
 
 
 class App:
@@ -44,7 +44,7 @@ class App:
         self.segments: List[Segment] = []
         self.storage = storage
 
-    def feature(self):
+    def feature(self, cls):
         """
         # TODO: Clearer docs
         Initializes the wrapped class and returns a handle to the registered
@@ -67,21 +67,15 @@ class App:
         # configured to return NewImplementation
         MyFeature.create()
         """
-        def wrap(cls):
-            definition = Definition(cls())
-            ft = Feature(definition)
-            return FeatureHandle(self, ft)
+        definition = Definition(cls())
+        ft = Feature(definition)
+        return FeatureHandle(self, ft)
 
-        return wrap
-
-    def segment(self):
-        def wrap(cls):
-            definition = Definition(cls())
-            seg = Segment(definition)
-            self.segments.append(seg)
-            return seg
-
-        return wrap
+    def segment(self, cls):
+        definition = Definition(cls())
+        seg = Segment(definition)
+        self.segments.append(seg)
+        return seg
 
     def configure_feature(self, feature: Feature, state: FeatureState):
         # TODO: Validate state against segments

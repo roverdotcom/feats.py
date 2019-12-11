@@ -1,7 +1,7 @@
 from .meta import Definition
 
 
-def default():
+def default(*args):
     def wrap(fn):
         fn.__class__._feats_default = fn
         return fn
@@ -23,6 +23,10 @@ class Feature:
     @property
     def input_type(self):
         return self.definition.implementations[0].input_type
+
+    @property
+    def default_implementation(self):
+        raise ValueError("TODO")
 
 
 class _TrueDefault:

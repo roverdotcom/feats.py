@@ -1,6 +1,4 @@
 from .feature import default
-from .registry import Registry
+from .app import App
 
-registry = Registry()
-
-__all__ = [registry.feature, registry.segment, default]
+__all__ = [App, default]

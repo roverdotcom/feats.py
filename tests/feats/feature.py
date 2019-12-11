@@ -1,8 +1,9 @@
+from unittest import TestCase
+
 import feats
 from feats.app import App
 from feats.storage import Memory
 
-from unittest import TestCase
 
 class InvalidUnaryFeatures:
     class NoImpls:
@@ -73,12 +74,12 @@ class InvalidNullaryFeatures:
 
 
 class ValidUnaryFeatures:
-     
+
     class One:
         @feats.default
         def foo(self, arg: str) -> str:
             return "foo"
- 
+
     class Two:
         @feats.default
         def foo(self, arg: str) -> str:
@@ -86,7 +87,7 @@ class ValidUnaryFeatures:
 
         def bar(self, arg: str) -> str:
             return "bar"
- 
+
     class Three:
         @feats.default
         def foo(self, arg: str) -> str:
@@ -183,19 +184,27 @@ class AppTests(TestCase):
         self.app = App(storage=Memory())
 
     def _get_definitions(self, cls):
-        return [value for key, value in cls.__dict__.items() if not key.startswith('_')]
+        return [
+            value
+            for key, value in cls.__dict__.items()
+            if not key.startswith('_')
+        ]
 
     def test_valids_unary(self):
-        for definition in self._get_definitions(UnaryFeatures):
-            handle = app.feature(definition)
-            self.assertIsNotNone(handle)
+        for definition in self._get_definitions(ValidUnaryFeatures):
+            with self.subTest(definition):
+                handle = self.app.feature(definition)
+                self.assertIsNotNone(handle)
 
     def test_valids_nullary(self):
-        for definition in self._get_definitions(NullaryFeatures):
+        for definition in self._get_definitions(ValidNullaryFeatures):
             with self.subTest(definition):
-                handle = app.feature(definition)
+                handle = self.app.feature(definition)
                 self.assertIsNotNone(handle)
 
     def test_invalids_unary(self):
         for definition in self._get_definitions(InvalidUnaryFeatures):
-            handle = app.feature(definition)
+            with self.subTest(definition):
+                handle = self.app.feature(definition)
+                # TODO: Should raise
+                self.assertIsNone(handle)

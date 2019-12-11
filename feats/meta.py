@@ -1,4 +1,4 @@
-from typings import List
+from typing import List
 
 
 class Implementation:
@@ -6,7 +6,7 @@ class Implementation:
         # TODO: Test if fn is a __call__able that the annotations are correct
         typings = fn.__annotations__.copy()
         # return is a special typing specific to the return value of the fn
-        output_type = typings.pop('return')
+        output_type = typings.pop('return', None)
         input_arg = fn.__annotations__.popitem()
 
         has_output = self.output_type is not None
@@ -35,7 +35,7 @@ class Definition:
         for key, value in type(obj).__dict__.items():
             if key.startswith('_') or not callable(value):
                 continue
-            self.implementations.append(Implementation(value))
+            self.implementations.append(Implementation(obj, value))
 
         if len(self.implementations) == 0:
             # TODO: Describe what an implementation needs

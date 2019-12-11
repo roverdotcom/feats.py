@@ -1,6 +1,6 @@
 from inspect import getclasstree
 
-from functool import lru_cache
+from functools import lru_cache
 
 from .meta import Definition
 from .meta import Implementation

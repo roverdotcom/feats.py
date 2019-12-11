@@ -4,8 +4,8 @@ from itertools import accumulate
 from random import choices
 from typing import Callable, Mapping
 
-Weights = Mapping(str, int)
-Segment = Callable([object], str)
+Weights = Mapping[str, int]
+Segment = Callable[[object], str]
 
 
 class Selector(metaclass=abc.ABCMeta):
