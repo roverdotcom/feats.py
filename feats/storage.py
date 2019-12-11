@@ -10,7 +10,7 @@ is at the head of the sequence.
 If this Storage has not yet seen a key, it should return an empty sequence.
 """
 
-Memory: Storage = defaultdict(list)
+Memory: Storage = lambda: defaultdict(list)
 """
 The Memory storage keeps all data in memory. When the application exits, all data
 will be lost.
