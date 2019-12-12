@@ -36,8 +36,8 @@ class UnaryState(FeatureState):
 
     def __init__(self,
                  segments,
-                 default_implementation: Implementation,
-                 selector_mapping):
+                 selector_mapping,
+                 created_by):
         # selector_mapping is a dictionary from string tuples to selectors
         # The values of the tuple is the segmentation of the input to the
         # feature in the order that the segments are specified
@@ -48,5 +48,5 @@ class UnaryState(FeatureState):
         segment_values = [segment(value) for segment in self.segments]
         selector = self.selector_mapping.get(segment_values, None)
         if selector is None:
-            return self.default_implementation
+            return None
         return selector.select_implementation(value)

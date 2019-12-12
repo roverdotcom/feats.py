@@ -9,9 +9,10 @@ from .meta import Implementation
 class Segment:
     def __init__(self, definition: Definition):
         _check_output_type(definition)
+        _check_input_types(definition)
         self.definition = definition
         self.input_mapping = {
-            impl.input_type: impl
+            impl.input_types[0]: impl
             for impl in self.definition.implementations
         }
 
@@ -48,13 +49,20 @@ class Segment:
         value's type.
         """
         impl = self.find_implementation(type(value))
-        # This don't work, impl isn't a callable. Just skely for now
         return impl(value)
+
+
+def _check_input_types(definition: Definition):
+    for impl in definition.implementations:
+        if len(impl.input_types) == 0:
+            raise ValueError("Must specify an input")
+        if len(impl.input_types) > 1:
+            raise ValueError("Cannot specify more than one input to a segment")
 
 
 def _check_output_type(definition: Definition):
     for impl in definition.implementations:
-        if impl.return_type is not str:
+        if impl.output_type is not str:
             # TODO: Better error messages for this impl,
             # collect all impls that are wrong
             raise ValueError("All implementations must return str")

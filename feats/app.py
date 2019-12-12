@@ -79,7 +79,7 @@ class App:
         return seg
 
     def configure_feature(self, feature: Feature, state: FeatureState):
-        # TODO: Validate state against segments
+        # TODO: Validate state against segments?
         self.storage[feature].append(state)
 
     def find_segments(self, input_cls):
