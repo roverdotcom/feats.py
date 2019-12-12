@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from typing import List
+from typing import Dict
 
 
 class Implementation:
@@ -36,14 +36,14 @@ class Definition:
     """
 
     def __init__(self, obj):
-        self.implementations: List[Implementation] = []
+        self.implementations: Dict[str, Implementation] = {}
         self.annotations = defaultdict(list)
         for key in dir(obj):
             value = getattr(obj, key)
             if key.startswith('_') or not callable(value):
                 continue
             impl = Implementation(value)
-            self.implementations.append(impl)
+            self.implementations[impl.name] = impl
             if hasattr(value, '_feats_annotations_'):
                 for annotation in value._feats_annotations_:
                     self.annotations[annotation].append(impl)

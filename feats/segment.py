@@ -13,7 +13,7 @@ class Segment:
         self.definition = definition
         self.input_mapping = {
             impl.input_types[0]: impl
-            for impl in self.definition.implementations
+            for impl in self.definition.implementations.values()
         }
 
     @lru_cache(maxsize=32)
@@ -53,7 +53,7 @@ class Segment:
 
 
 def _check_input_types(definition: Definition):
-    for impl in definition.implementations:
+    for impl in definition.implementations.values():
         if len(impl.input_types) == 0:
             raise ValueError("Must specify an input")
         if len(impl.input_types) > 1:
@@ -61,7 +61,7 @@ def _check_input_types(definition: Definition):
 
 
 def _check_output_type(definition: Definition):
-    for impl in definition.implementations:
+    for impl in definition.implementations.values():
         if impl.output_type is not str:
             # TODO: Better error messages for this impl,
             # collect all impls that are wrong

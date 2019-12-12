@@ -208,7 +208,7 @@ class AppTests(TestCase):
             with self.subTest(definition):
                 handle = self.app.feature(definition)
                 self.assertIsNotNone(handle)
-                self.assertEqual(handle.create(), 'foo')
+                self.assertEqual(handle.create('arg'), 'foo')
 
     def test_valid_nullary(self):
         for definition in self._definition_test(ValidNullaryFeatures):
