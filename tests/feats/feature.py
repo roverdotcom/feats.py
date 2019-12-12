@@ -42,6 +42,15 @@ class InvalidUnaryFeatures:
         def bar(self, arg: str):
             return "bar"
 
+    class AmbiguousDefault:
+        @feats.default
+        def foo(self, arg: str):
+            return "foo"
+
+        @feats.default
+        def bar(self, arg: str) -> str:
+            return "bar"
+
 
 class InvalidNullaryFeatures:
     class NoImpls:
@@ -111,15 +120,15 @@ class ValidUnaryFeatures:
 class ValidNullaryFeatures:
     class One:
         @feats.default
-        def foo(self):
+        def foo(self) -> str:
             return "foo"
 
     class Two:
         @feats.default
-        def foo(self):
+        def foo(self) -> str:
             return "foo"
 
-        def bar(self):
+        def bar(self) -> str:
             return "bar"
 
     class Three:
@@ -195,16 +204,23 @@ class AppTests(TestCase):
             with self.subTest(definition):
                 handle = self.app.feature(definition)
                 self.assertIsNotNone(handle)
+                self.assertEqual(handle.create(), 'foo')
 
     def test_valids_nullary(self):
         for definition in self._get_definitions(ValidNullaryFeatures):
             with self.subTest(definition):
                 handle = self.app.feature(definition)
                 self.assertIsNotNone(handle)
+                self.assertEqual(handle.create(), 'foo')
 
     def test_invalids_unary(self):
         for definition in self._get_definitions(InvalidUnaryFeatures):
             with self.subTest(definition):
-                handle = self.app.feature(definition)
-                # TODO: Should raise
-                self.assertIsNone(handle)
+                with self.assertRaises(ValueError):
+                    self.app.feature(definition)
+
+    def test_invalids_nullary(self):
+        for definition in self._get_definitions(InvalidUnaryFeatures):
+            with self.subTest(definition):
+                with self.assertRaises(ValueError):
+                    self.app.feature(definition)

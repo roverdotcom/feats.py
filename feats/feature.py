@@ -1,32 +1,53 @@
 from .meta import Definition
+from collections import Counter
 
 
-def default(*args):
-    def wrap(fn):
-        fn.__class__._feats_default = fn
-        return fn
-    return wrap
+def default(fn):
+    if hasattr(fn, '_feats_annotations_'):
+        fn._feats_annotations_.append('default')
+    else:
+        fn._feats_annotations_ = ['default']
+
+    return fn
 
 
 def _check_same_inputs(definition: Definition) -> None:
-    input_type = definition.implementations[0].input_type
-    for impl in definition.implementations[1, -1]:
-        if impl.input_type != input_type:
-            raise ValueError("All Input Types must be the same")
+    input_types = Counter([
+        tuple(impl.input_types) for impl in definition.implementations
+    ])
+    errors = []
+    if len(input_types) > 1:
+        errors.append(
+            "The inputs to all implementations must be the same {}".format(
+                input_types
+            )
+        )
+
+    if errors:
+        raise ValueError(errors)
+
+
+def _check_default(definition: Definition) -> None:
+    defaults = definition.annotations['default']
+    if len(defaults) == 0:
+        raise ValueError("Must specify a default implementation")
+    elif len(defaults) > 1:
+        raise ValueError("Must specify only one default implementation")
 
 
 class Feature:
-    def __init__(self, obj, definition):
+    def __init__(self, definition):
         _check_same_inputs(definition)
+        _check_default(definition)
         self.definition = definition
 
     @property
-    def input_type(self):
-        return self.definition.implementations[0].input_type
+    def input_types(self):
+        return self.definition.implementations[0].input_types
 
     @property
     def default_implementation(self):
-        raise ValueError("TODO")
+        return self.definition.annotations['default'][0]
 
 
 class _TrueDefault:

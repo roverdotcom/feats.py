@@ -69,7 +69,8 @@ class App:
         """
         definition = Definition(cls())
         ft = Feature(definition)
-        return FeatureHandle(self, ft)
+        # TODO name of feature
+        return FeatureHandle(self, str(cls), ft)
 
     def segment(self, cls):
         definition = Definition(cls())

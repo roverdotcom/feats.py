@@ -1,32 +1,34 @@
+import inspect
+from collections import defaultdict
 from typing import List
 
 
 class Implementation:
-    def __init__(self, fn_self, fn):
-        # TODO: Test if fn is a __call__able that the annotations are correct
-        typings = fn.__annotations__.copy()
-        # return is a special typing specific to the return value of the fn
-        output_type = typings.pop('return', None)
-        try:
-            input_arg = fn.__annotations__.popitem()
-        except KeyError:
-            input_arg = None
-
-        has_output = output_type is not None
-        has_input = input_arg is not None
-        if not has_output or not has_input:
-            # TODO: Handle no input argument
-            # TODO: Add more descriptive error messaging
-            raise ValueError("Missing type annotation")
-
+    def __init__(self, fn):
         self.fn = fn
-        self.fn_self = fn_self
         self.name = fn.__name__
-        self.input_type = input_arg[1]
-        self.output_type = output_type
+
+        signature = inspect.signature(fn)
+        self.output_type = signature.return_annotation
+        has_output = self.output_type != inspect.Signature.empty
+
+        self.input_types = []
+        errors = []
+        for name, param in signature.parameters.items():
+            if param.annotation == inspect.Parameter.empty:
+                errors.append(
+                    "{} does not declare an input type for {}".format(fn, name)
+                )
+            else:
+                self.input_types.append(param.annotation)
+
+        if not has_output:
+            errors.append("{} does not declare an output type".format(fn))
+        if errors:
+            raise ValueError(errors)
 
     def __call__(self, *args, **kwargs):
-        return self.fn(self.fn_self, *args, **kwargs)
+        return self.fn(*args, **kwargs)
 
 
 class Definition:
@@ -35,10 +37,16 @@ class Definition:
 
     def __init__(self, obj):
         self.implementations: List[Implementation] = []
-        for key, value in type(obj).__dict__.items():
+        self.annotations = defaultdict(list)
+        for key in dir(obj):
+            value = getattr(obj, key)
             if key.startswith('_') or not callable(value):
                 continue
-            self.implementations.append(Implementation(obj, value))
+            impl = Implementation(value)
+            self.implementations.append(impl)
+            if hasattr(value, '_feats_annotations_'):
+                for annotation in value._feats_annotations_:
+                    self.annotations[annotation].append(impl)
 
         if len(self.implementations) == 0:
             # TODO: Describe what an implementation needs
