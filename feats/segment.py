@@ -1,15 +1,13 @@
-from inspect import getclasstree
-
 from functools import lru_cache
+from inspect import getmro
 
-from .meta import Definition
-from .meta import Implementation
+from .meta import Definition, Implementation
 
 
 class Segment:
     def __init__(self, definition: Definition):
         _check_output_type(definition)
-        _check_input_types(definition)
+        _check_input_type(definition)
         self.definition = definition
         self.input_mapping = {
             impl.input_types[0]: impl
@@ -29,9 +27,9 @@ class Segment:
         # couldn't find a way to isinstance between N classes, so we'll do it
         # ourselves
 
-        tree = getclasstree(cls, unique=True)
+        tree = getmro(cls)
         found = []
-        for cur_cls, parent_cls in tree:
+        for cur_cls in tree:
             impl = self.input_mapping.get(cur_cls)
             if impl is not None:
                 found.append(impl)
@@ -52,12 +50,33 @@ class Segment:
         return impl(value)
 
 
-def _check_input_types(definition: Definition):
+def _check_input_type(definition: Definition):
+    input_mros = []
     for impl in definition.implementations.values():
         if len(impl.input_types) == 0:
             raise ValueError("Must specify an input")
         if len(impl.input_types) > 1:
             raise ValueError("Cannot specify more than one input to a segment")
+        input_mros.append(getmro(impl.input_types[0]))
+
+    # no input type can be in the MRO of another
+    # this rule can probably be relaxed later on,
+    # but could cause unintended consequences if changing an existing
+    # segment, as existing inputs could be segmented differently than
+    # previously stored.
+    errors = []
+    for i, my_mro in enumerate(input_mros):
+        for j, other_mro in enumerate(input_mros):
+            if i == j:
+                continue
+            if my_mro[0] in other_mro:
+                errors.append(
+                    "{} cannot be segmented alongside {}".format(
+                        my_mro[0], other_mro[0]
+                    )
+                )
+    if errors:
+        raise ValueError(errors)
 
 
 def _check_output_type(definition: Definition):
