@@ -5,10 +5,10 @@ from feats.selector import Rollout
 
 class StaticTests(TestCase):
 
-    def test_returns_given_value_no_args(self):
+    def test_no_args(self):
         self.assertEqual(Static('foo').select(), 'foo')
 
-    def test_returns_given_value_has_args(self):
+    def test_has_args(self):
         self.assertEqual(Static('bar').select(object()), 'bar')
 
 
