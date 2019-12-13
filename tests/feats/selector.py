@@ -47,6 +47,10 @@ class RolloutTests(TestCase):
                 '0': 0,
             })
 
+    def test_rollout_no_weight(self):
+        with self.assertRaises(ValueError):
+            selector = Rollout(self.segment, {})
+
     def test_rollout_equal_weights(self):
         selector = Rollout(self.segment, {
             '0': 1,
