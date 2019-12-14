@@ -94,13 +94,13 @@ depending on if they are enabled or disabled.
 They can be declared using a single function instead of a class
 
 ```python
-# No inputs, can only be disabled for everyone.
 @app.boolean
 def ImageProcessing() -> bool:
     return True # This is the default value
-
+```
 
 And can be used like so
+
 ```python
 if ImageProcessing.is_enabled():
     process_image()
@@ -134,7 +134,7 @@ class Subdivision:
 is a valid segment. It declares how to convert both a user and an address into
 a subdivision code.
 
-However,
+However, the following is not valid.
 ```python
 from myapp.feats import app
 @app.segment
@@ -148,7 +148,6 @@ class Subdivision:
     def address(self, address: Address): # Invalid, must declare return type as str
         return "{}-{}".format(address.country_code, address.subdivision_code)
 ```
-is not valid.
 
 
 ## Feature Inputs
@@ -166,13 +165,13 @@ class ConfirmText:
     def save(self, user: User) -> str:
         return translate(user.language, "Save")
 
-ConfirmText.create(user)
+ConfirmText.create(user) # create will now require a user argument
 
 @app.boolean
 def ImageProcessing(user: User) -> bool:
     return True
 
-ImageProcessing.is_enabled(user)
+ImageProcessing.is_enabled(user) # is_enabled will also require a user argument
 ```
 
 Inside of a class, all of the implementations must take exactly the same arguments.
