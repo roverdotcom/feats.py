@@ -3,7 +3,7 @@ Feats.py is a feature flag library for Python applications. We built it
 based on our learnings from using the [Gargoyle](https://github.com/adamchainz/gargoyle)
 library in production within a medium-sized engineering organization.
 
-Instead of giving the ability to turn features on or off, feats.py is based on
+Instead of giving the ability to turn features on or off, feats is based on
 the ability to choose between implementations of a feature. This allows for
 non-binary choices, which can help reduce the need for feature flags which depend
 on other feature flags and encourge a more object-oriented programming style.
@@ -52,9 +52,143 @@ app we have defined in myapp/feats.py `from myapp.feats import app`
 
 # Features
 
+Now that we have an App, we can start declaring Features.
 
+A Feature declares all of the implementations that can be interchangebly used.
+Implementations can be as simple as the button text to use, or as large as
+an entire replacement View to render.
+
+To declare a feature, decorate a class with `app.feature`.
+```python
+from myapp.feats import app
+
+@app.feature
+class ConfirmText:
+    @app.default
+    def submit(self) -> str:
+        return "Submit"
+
+    def save(self) -> str:
+        return "Save"
+```
+
+The decorator replaces the class declaration with a factory-style object. We can
+call the `create` method on this object to receive the confirmation text to use.
+
+```python
+text = ConfirmText.create()
+```
+
+The above will by default return "Submit" because the submit method was decorated
+as the default. All features are required to have a default.
+
+In order to have "Save" returned, we can [configure](#configuration) feats to do so.
+
+## Boolean Features
+
+Sometimes all we need is the ability to turn something on or off. For instance,
+we may want to just disable processing images during a DDOS attack.
+For this, we can use boolean features. These simply return `True` or `False`
+depending on if they are enabled or disabled.
+
+They can be declared using a single function instead of a class
+
+```python
+# No inputs, can only be disabled for everyone.
+@app.boolean
+def ImageProcessing() -> bool:
+    return True # This is the default value
+
+
+And can be used like so
+```python
+if ImageProcessing.is_enabled():
+    process_image()
+```
 
 # Segments
+
+We will normally want to pass in data to a feature. This allows us to select
+certain users to receive an implementation. Without segments, all users will
+have to receive a single implementation.
+
+Segments tell feats how to group input objects. A segment declaration
+holds functions which can convert all of your business objects into that grouping.
+
+All segments have a single typed input argument and must return strings.
+
+For instance,
+```python
+from myapp.feats import app
+@app.segment
+class Subdivision:
+    """
+    The ISO 3166-2 Subdivision Code, e.g US-WA
+    """
+    def user(self, user: User) -> str:
+        return self.address(user.address)
+
+    def address(self, address: Address) -> str:
+        return "{}-{}".format(address.country_code, address.subdivision_code)
+```
+is a valid segment. It declares how to convert both a user and an address into
+a subdivision code.
+
+However,
+```python
+from myapp.feats import app
+@app.segment
+class Subdivision:
+    """
+    The ISO 3166-2 Subdivision Code, e.g US-WA
+    """
+    def user(self, user) -> str: # Invalid, must declare the input type
+        return self.address(user.address)
+
+    def address(self, address: Address): # Invalid, must declare return type as str
+        return "{}-{}".format(address.country_code, address.subdivision_code)
+```
+is not valid.
+
+
+## Feature Inputs
+
+Once we have segments declared, we can extend our features to take in objects.
+
+Both class based features and function based features support this.
+
+```python
+@app.feature
+class ConfirmText:
+    def submit(self, user: User) -> str:
+        return translate(user.language, "Submit")
+
+    def save(self, user: User) -> str:
+        return translate(user.language, "Save")
+
+ConfirmText.create(user)
+
+@app.boolean
+def ImageProcessing(user: User) -> bool:
+    return True
+
+ImageProcessing.is_enabled(user)
+```
+
+Inside of a class, all of the implementations must take exactly the same arguments.
+Like segments, they also must be strictly typed. This typing lets feats know which
+segments are valid for which features.
+
+```python
+@app.feature
+class ConfirmText:
+    def submit(self, user) -> str: # Invalid, must declare input type
+        return "Submit"
+    def save(self) -> str: # Invalid, must have same number of inputs
+        return "Save"
+    def persist(self, request: HttpRequest) -> str # Invalid, must have same input types
+        return "Persist"
+```
 
 # Configuration
 
