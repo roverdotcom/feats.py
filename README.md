@@ -1,7 +1,7 @@
 # feats.py (WIP)
 Feats.py is a feature flag library for Python applications. We built it
 based on our learnings from using the [Gargoyle](https://github.com/adamchainz/gargoyle)
-library in production for a medium-sized engineering organization.
+library in production within a medium-sized engineering organization.
 
 Instead of giving the ability to turn features on or off, feats.py is based on
 the ability to choose between implementations of a feature. This allows for
@@ -14,6 +14,17 @@ feats.py supports that as well.
 
 * `>=` Python 3.6
 * `>=` Redis 5.0
+
+# Table of Contents
+
+* [App Setup](#app-Setup)
+* [Features](#features)
+* [Segments](#segments)
+* [Configuration](#configuration)
+* [Examples](#examples)
+  * [Ops Example](#operations)
+  * [Rollout Example](#rollout)
+  * [Experiment Example](#product-experiments)
 
 # App Setup
 
@@ -40,6 +51,8 @@ When we need to declare features and segments, we will then always use the
 app we have defined in myapp/feats.py `from myapp.feats import app`
 
 # Features
+
+
 
 # Segments
 
