@@ -12,8 +12,8 @@ feats.py supports that as well.
 
 # Requirements
 
-* \>= Python 3.6
-* \>= Redis 5.0
+* `>=` Python 3.6
+* `>=` Redis 5.0
 
 # App Setup
 
