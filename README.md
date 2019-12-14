@@ -26,6 +26,19 @@ backed store. The in-memory store is only useful for testing environments. Redis
 should be used in all other cases. Our Redis usage is based on streams, which require
 Redis 5.0 or higher.
 
+By convention, the feats app should be placed in the "feats.py" file of your
+module.
+
+```python
+#myapp/feats.py
+import feats
+import myapp.config
+app = feats.App(storage=feats.RedisStore(url=config.redis_url))
+```
+
+When we need to declare features and segments, we will then always use the
+app we have defined in myapp/feats.py `from myapp.feats import app`
+
 # Features
 
 # Segments
