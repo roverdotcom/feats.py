@@ -12,8 +12,8 @@ feats.py supports that as well.
 
 # Requirements
 
-* >= Python 3.6
-* >= Redis 5.0
+* \>= Python 3.6
+* \>= Redis 5.0
 
 # App Setup
 
@@ -74,8 +74,7 @@ processor.charge()
 ```
 
 The acme and premium methods are no longer available to call directly
-```
-python
+```python
 processor = PaymentProcessor.acme(user) # AttributeError
 processor = PaymentProcessor().acme(user) # AttributeError
 ```
