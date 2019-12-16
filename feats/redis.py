@@ -8,7 +8,9 @@ from redis.exceptions import ConnectionError
 class NotConnectedError(ConnectionError):
     pass
 
-class RedisClient():
+
+#TODO: add typings
+class RedisClient:
     _connection_object = None
 
     def __init__(self, host='localhost', port=6379, db=0, **options):
@@ -47,14 +49,18 @@ class RedisClient():
 
     def disconnect(self):
         if self._connection_object is not None:
-            self._connection_object.quit()
+            # if someone still has a reference to this _connection_object and
+            # calls redis methods directly on it the connection will be
+            # re-established. But once the connection object is out of scope
+            # python's GC will disconnect us from the server
+            self._connection_object.connection_pool.disconnect()
             self._connection_object = None
 
     def __getitem__(self, key):
         return FeatureStream(self.connection, key)
 
 
-class StreamIterator():
+class StreamIterator:
     def __init__(self, stream):
         self.index = 0
         self.end = len(stream)
@@ -72,7 +78,7 @@ class StreamIterator():
         return result[1]
 
 
-class FeatureStream():
+class FeatureStream:
 
     def __init__(self, redis, key):
         self.key = key
@@ -84,16 +90,16 @@ class FeatureStream():
     def info(self):
         return self._redis.xinfo_stream(self.key)
 
-    def read(self, index, count=1):
+    def read(self, index):
         """
-        xreads the stream for a given redis-generated key (eg '1576268467400-0')
+        reads the stream for a given redis-generated key (eg '1576268467400-0')
         """
-        return self._redis.xread(
-            streams={self.key: index},
-            count=count
-        )
+        return self.range(start=index, end=index)[0]
 
     def range(self, start='-', end='+'):
+        """
+        reads the stream for a range of ids, default is entire stream
+        """
         return self._redis.xrange(self.key, min=start, max=end)
 
     def last(self):

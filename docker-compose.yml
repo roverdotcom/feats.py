@@ -4,7 +4,9 @@ services:
     build: .
     networks:
       - default
-    command: ['python3', 'setup.py', 'test']
+    command: ['python3', 'setup.py', 'test', '--test-suite', 'integration_tests']
+    volumes:
+      - .:/app
   redis:
     image: redis:5.0.7
     command: ["redis-server", "--appendonly", "yes"]
