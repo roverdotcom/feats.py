@@ -13,7 +13,7 @@ def default(fn):
 
 def _check_same_inputs(definition: Definition) -> None:
     input_types = Counter([
-        tuple(impl.input_types) for impl in definition.implementations
+        tuple(impl.input_types) for impl in definition.implementations.values()
     ])
     errors = []
     if len(input_types) > 1:
@@ -48,6 +48,10 @@ class Feature:
     @property
     def default_implementation(self):
         return self.definition.annotations['default'][0]
+
+    @property
+    def implementations(self):
+        return self.definition.implementations
 
 
 class _TrueDefault:

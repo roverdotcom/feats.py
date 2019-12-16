@@ -44,7 +44,7 @@ class InvalidUnaryFeatures:
 
     class AmbiguousDefault:
         @feats.default
-        def foo(self, arg: str):
+        def foo(self, arg: str) -> str:
             return "foo"
 
         @feats.default
@@ -83,7 +83,6 @@ class InvalidNullaryFeatures:
 
 
 class ValidUnaryFeatures:
-
     class One:
         @feats.default
         def foo(self, arg: str) -> str:
@@ -167,6 +166,9 @@ class ValidSegments:
 
 
 class InvalidSegments:
+    class NoImpls:
+        pass
+
     class NoReturnType:
         def reticulate_string(self, value: str):
             return "reticulated string"
@@ -192,35 +194,46 @@ class AppTests(TestCase):
         super().setUp()
         self.app = App(storage=Memory())
 
-    def _get_definitions(self, cls):
-        return [
+    def _definition_test(self, cls):
+        definitions = [
             value
             for key, value in cls.__dict__.items()
             if not key.startswith('_')
         ]
+        self.assertNotEqual(len(definitions), 0)
+        return definitions
 
-    def test_valids_unary(self):
-        for definition in self._get_definitions(ValidUnaryFeatures):
+    def test_valid_unary(self):
+        for definition in self._definition_test(ValidUnaryFeatures):
+            with self.subTest(definition):
+                handle = self.app.feature(definition)
+                self.assertIsNotNone(handle)
+                self.assertEqual(handle.create('arg'), 'foo')
+
+    def test_valid_nullary(self):
+        for definition in self._definition_test(ValidNullaryFeatures):
             with self.subTest(definition):
                 handle = self.app.feature(definition)
                 self.assertIsNotNone(handle)
                 self.assertEqual(handle.create(), 'foo')
 
-    def test_valids_nullary(self):
-        for definition in self._get_definitions(ValidNullaryFeatures):
+    def test_valid_segments(self):
+        for definition in self._definition_test(ValidSegments):
             with self.subTest(definition):
-                handle = self.app.feature(definition)
+                handle = self.app.segment(definition)
                 self.assertIsNotNone(handle)
-                self.assertEqual(handle.create(), 'foo')
 
-    def test_invalids_unary(self):
-        for definition in self._get_definitions(InvalidUnaryFeatures):
-            with self.subTest(definition):
-                with self.assertRaises(ValueError):
-                    self.app.feature(definition)
+    def test_invalid_unary(self):
+        for definition in self._definition_test(InvalidUnaryFeatures):
+            with self.subTest(definition), self.assertRaises(ValueError):
+                self.app.feature(definition)
 
-    def test_invalids_nullary(self):
-        for definition in self._get_definitions(InvalidUnaryFeatures):
-            with self.subTest(definition):
-                with self.assertRaises(ValueError):
-                    self.app.feature(definition)
+    def test_invalid_nullary(self):
+        for definition in self._definition_test(InvalidNullaryFeatures):
+            with self.subTest(definition), self.assertRaises(ValueError):
+                self.app.feature(definition)
+
+    def test_invalid_segments(self):
+        for definition in self._definition_test(InvalidSegments):
+            with self.subTest(definition), self.assertRaises(ValueError):
+                self.app.segment(definition)

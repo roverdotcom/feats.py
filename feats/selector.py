@@ -1,5 +1,6 @@
 import abc
-from bisect import bisect_left
+import hashlib
+from bisect import bisect
 from itertools import accumulate
 from random import choices
 from typing import Callable, Mapping
@@ -41,13 +42,29 @@ class Rollout(Selector):
     def __init__(self, segment: Segment, weights: Weights):
         self.segment = segment
         self.population = list(weights.keys())
+        if len(self.population) == 0:
+            raise ValueError("Must supply at least one weight to the selector")
         self.cum_weights = list(accumulate(weights.values()))
+        self.modulo = self.cum_weights[-1]
+        if self.modulo == 0:
+            raise ValueError("Must supply at least one positive weight to the selector")
+        self.digest_size = self.modulo // 128 + 1
+
+    def _hex_hash(self, key: str) -> str:
+        # We aren't looking for anything cryptographically secure here
+        # blake2s let's us specify the digest size (i.e the hash string length)
+        # which is normally going to be 1 byte. We don't need anything larger
+        # than the modulo into our implementation buckets
+        return hashlib.blake2s(
+            key.encode('utf-8'),
+            digest_size=self.digest_size
+        ).hexdigest()
 
     def select(self, value: object) -> str:
-        # key = self.segment(value)
-        # TODO: Migrate md5 modulo code from MD5Rollout to here
-        modulo = 0 % self.cum_weights[-1]
-        return self.population[bisect_left(self.cum_weights, modulo)]
+        key = self.segment(value)
+        hash = int(self._hex_hash(key), 16)
+        bucket = hash % self.modulo
+        return self.population[bisect(self.cum_weights, bucket)]
 
 
 class ExperimentPersister(metaclass=abc.ABCMeta):

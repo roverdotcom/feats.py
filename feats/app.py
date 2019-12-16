@@ -4,7 +4,7 @@ from .storage import Storage
 from .feature import Feature
 from .meta import Definition
 from .segment import Segment
-from .state import DefaultState, FeatureState
+from .state import FeatureState
 
 
 class FeatureHandle:
@@ -12,22 +12,32 @@ class FeatureHandle:
         self.app = app
         self.name = name
         self.feature = feature
-        self.default_state = DefaultState(feature.default_implementation.name)
 
-    def create(self, *args):
+    def find(self, *args) -> str:
+        """
+        Returns the name of the implementation to use for the argument(s).
+        """
+
+        states = self.app.storage[self.name]
+        try:
+            state = states[-1]
+            name = state.select_implementation(*args)
+        except IndexError:
+            name = None
+
+        if name is None:
+            return self.feature.default_implementation.name
+        return name
+
+    def create(self, *args) -> object:
         """
         Returns the appropriate implementation to use for the argument(s).
 
         The implementation is found using any configured segmentations and
         selectors for the feature.
         """
-        states = self.app.storage[self.name]
-        try:
-            state = states[-1]
-        except IndexError:
-            state = self.default_state
-
-        return state.select_implementation(*args)
+        name = self.find(*args)
+        return self.feature.implementations[name](*args)
 
 
 class App:
@@ -79,7 +89,7 @@ class App:
         return seg
 
     def configure_feature(self, feature: Feature, state: FeatureState):
-        # TODO: Validate state against segments
+        # TODO: Validate state against segments?
         self.storage[feature].append(state)
 
     def find_segments(self, input_cls):
