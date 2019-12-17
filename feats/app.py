@@ -52,6 +52,7 @@ class App:
         """
         # TODO Index by input classes?
         self.segments: List[Segment] = []
+        self.features = []
         self.storage = storage
 
     def feature(self, cls):
@@ -79,6 +80,7 @@ class App:
         """
         definition = Definition(cls())
         ft = Feature(definition)
+        self.features.append(ft)
         # TODO name of feature
         return FeatureHandle(self, str(cls), ft)
 
