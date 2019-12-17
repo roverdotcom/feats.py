@@ -1,7 +1,6 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from feats.redis import ConnectionError
 from feats.redis import FeatureStream
 from feats.redis import RedisClient
 from feats.redis import StreamIterator
@@ -12,20 +11,6 @@ class RedisClientTests(TestCase):
     def setUp(self):
         super().setUp()
         self.client = RedisClient(host='redis')
-        self.bad_client = RedisClient(host='invalid')
-        self.client.connect()
-
-    def test_connection_errors_bad_connection(self):
-        with self.assertRaises(ConnectionError):
-            self.bad_client.connect()
-
-    def test_connect_returns_true(self):
-        self.assertTrue(self.client.connect())
-
-    def test_connect_returns_cached_connection(self):
-        conn = self.client.connection
-        self.client.connect()
-        self.assertIs(conn, self.client.connection)
 
     def test_connection_property_raises_error(self):
         self.client.disconnect()
@@ -42,11 +27,11 @@ class RedisClientTests(TestCase):
             mock.assert_called_once()
             self.assertIsNone(self.client._connection_object)
 
+
 class FeatureTests(TestCase):
     def setUp(self):
         super().setUp()
         self.client = RedisClient(host='redis')
-        self.client.connect()
         self._purge_stream()
 
     @property
@@ -84,7 +69,7 @@ class FeatureStreamTests(FeatureTests):
     def test_stream_write_read(self):
         stream = self._get_stream()
         key = stream.append({'some_data': 'some_value'})
-        expected_tuple = (key, {b'some_data': b'some_value'})
+        expected_tuple = (key, {'some_data': 'some_value'})
         self.assertEqual(stream.read(key), expected_tuple)
 
     def test_stream_info(self):
@@ -92,8 +77,8 @@ class FeatureStreamTests(FeatureTests):
         stream = self._get_stream()
         info = stream.info()
         self.assertEqual(info['length'], 4)
-        self.assertEqual(info['first-entry'][1], {b'foo': b'bar'})
-        self.assertEqual(info['last-entry'][1], {b'more': b'things'})
+        self.assertEqual(info['first-entry'][1], {'foo': 'bar'})
+        self.assertEqual(info['last-entry'][1], {'more': 'things'})
 
     def test_stream_length(self):
         self._populate_stream()
@@ -103,12 +88,12 @@ class FeatureStreamTests(FeatureTests):
     def test_firt_gets_first_entry(self):
         self._populate_stream()
         stream = self._get_stream()
-        self.assertEqual(stream.first()[b'foo'], b'bar')
+        self.assertEqual(stream.first()['foo'], 'bar')
 
     def test_last_gets_last_entry(self):
         self._populate_stream()
         stream = self._get_stream()
-        self.assertEqual(stream.last()[b'more'], b'things')
+        self.assertEqual(stream.last()['more'], 'things')
 
 
 class StreamIteratorTests(FeatureTests):
@@ -125,8 +110,6 @@ class StreamIteratorTests(FeatureTests):
     def test_does_not_change_size_during_iteration(self):
         self._populate_stream()
         stream = self._get_stream()
-        iterator = iter(self._get_stream())
-        stream.append({'another': 'value'})
         for item in stream:
-            print(item)
-            self.assertNotEqual(item, {b'another': b'value'})
+            stream.append({'another': 'value'})
+            self.assertNotEqual(item, {'another': 'value'})
