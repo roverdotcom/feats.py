@@ -85,7 +85,7 @@ class FeatureStreamTests(FeatureTests):
         stream = self._get_stream()
         self.assertEqual(len(stream), 4)
 
-    def test_firt_gets_first_entry(self):
+    def test_first_gets_first_entry(self):
         self._populate_stream()
         stream = self._get_stream()
         self.assertEqual(stream.first()['foo'], 'bar')
