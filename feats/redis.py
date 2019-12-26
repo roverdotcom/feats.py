@@ -1,10 +1,6 @@
 from typing import List
 from redis import Redis
-from redis.exceptions import ConnectionError
-
-
-class NotConnectedError(ConnectionError):
-    pass
+from .storage import StorageUnavailableException
 
 
 class StreamIterator:
@@ -39,7 +35,7 @@ class FeatureStream:
     a RedisClient instance.
     """
     def __init__(self, redis, key):
-        self.key = key
+        self.key = f"feature:{key}"
         self._redis = redis
 
     def append(self, state) -> str:
@@ -107,26 +103,26 @@ class RedisClient:
     Initializing this class initializes the redis connection client but does
     _not_ test the connection to redis server.
     """
-    def __init__(self, host='localhost', port=6379, db=0, decode_responses=True, **options):
-        self._connection_object = self._connect(host, port, db, decode_responses, **options)
+    def __init__(self, host='localhost', port=6379, db=0, **options):
+        self._connection_object = self._connect(host, port, db, **options)
 
-    def _connect(self, host, port, db, decode_responses, **options):
+    def _connect(self, host, port, db, **options):
         """
         Creats a reids connection with the args provided to the constructor
         and returns the connection object (does not actually connect to redis)
         """
-        return Redis(
-            host=host,
-            port=port,
-            db=db,
-            decode_responses=decode_responses,
+        return Redis(**{
+            'host': host,
+            'port': port,
+            'db': db,
+            'decode_responses': True,
             **options
-        )
+        })
 
     @property
     def connection(self):
         if self._connection_object is None:
-            raise NotConnectedError
+            raise StorageUnavailableException
 
         return self._connection_object
 
