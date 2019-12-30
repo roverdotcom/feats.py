@@ -2,6 +2,7 @@ from typing import List
 
 from .storage import Storage
 from .feature import Feature
+from .feature import default
 from .meta import Definition
 from .segment import Segment
 from .state import FeatureState
@@ -83,6 +84,9 @@ class App:
         self.features.append(ft)
         # TODO name of feature
         return FeatureHandle(self, str(cls), ft)
+
+    def default(self, fn):
+        return default(fn)
 
     def segment(self, cls):
         definition = Definition(cls())

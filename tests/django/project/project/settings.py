@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import feats
+from feats.storage import Memory as FeatsMemoryStorage
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'feats.django',
-    'myapp',
 ]
 
 MIDDLEWARE = [
@@ -120,3 +121,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+FEATS = feats.App(storage=FeatsMemoryStorage())
+
+
+@FEATS.feature
+class Feature1:
+    @FEATS.default
+    def my_default(self) -> str:
+        return "The default"
