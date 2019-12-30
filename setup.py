@@ -10,6 +10,7 @@ setuptools.setup(
     author="Rover.com",
     author_email="mike.chaten@rover.com",
     description="A small example package",
+    include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/roverdotcom/feats.py",

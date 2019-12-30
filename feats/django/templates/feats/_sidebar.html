@@ -1,0 +1,16 @@
+{% if features %}
+<nav>
+	<ol class="flex-column">
+		{% for feature in features %}
+		<li> 
+			{% url 'feats:detail' feature.name as feature_url %}
+			<a href="{{ feature_url }}">{{feature.name}}</a>
+		</li>
+		{% endfor %}
+	</ol>
+</nav>
+{% else %}
+<h1> No Features Registered </h1>
+{% endif %}
+
+
