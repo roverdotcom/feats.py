@@ -18,3 +18,6 @@ will be lost.
 Mainly useful for testing environments.
 """
 
+
+class StorageUnavailableException(Exception):
+    pass
