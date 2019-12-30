@@ -130,3 +130,7 @@ dmypy.json
 
 # vi
 *.swp
+
+# OSX
+
+.DS_Store
