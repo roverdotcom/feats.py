@@ -1,29 +1,49 @@
 {% extends "feats/_template.html" %}
 
 {% block main %}
-<h1> {{ feature.name }} </h1>
-{% if feature.feature.description %}
-<p class="lead"/>
-{{ feature.feature.description }}
-</p>
-{% endif %}
-
-<h2> Implementations </h2>
-<dl>
-    {% for name, impl in feature.feature.implementations.items %}
-    <dt>
-        {% if impl is feature.feature.default_implementation %}
-        (Default)
-        {% endif %}
-        {{ name }}
-    </dt>
-    <dd>
-        {% if impl.description %}
-            {{ impl.description }}
-        {% else %}
-            No description provided
-        {% endif %}
-    </dd>
+<section>
+    <h1> {{ feature.name }} </h1>
+    {% if feature.feature.description %}
+    <p class="lead"/>{{ feature.feature.description }}</p>
+    {% endif %}
+</section>
+<section>
+    <h2> Options </h2>
+    <dl>
+        {% for name, impl in feature.feature.implementations.items %}
+        <dt>
+            {% if impl is feature.feature.default_implementation %}
+            (Default)
+            {% endif %}
+            {{ name }}
+        </dt>
+        <dd>
+            {% if impl.description %}
+                {{ impl.description }}
+            {% else %}
+                No description provided
+            {% endif %}
+        </dd>
+        {% endfor %}
+    </dl>
+</section>
+<section>
+    <h2>
+        Configuration
+        <a class="small" href="{% url 'feats:update' feature.name %}">✎</a>
+    </h2>
+    {% if state.selectors %}
+    Segmentation: {{ state.segments|join:',' }}
+    <dl>
+    {% for selector in state.selectors %}
+    <dt>TODO SELECTOR NAME</dt>
+    <dd>TODO SELECTOR RENDER</dd>
     {% endfor %}
-</dl>
+    </dl>
+    {% else %}
+    <p>No selectors configured. The default will always be used.</p>
+    {% endif %}
+</section>
+
+
 {% endblock %}

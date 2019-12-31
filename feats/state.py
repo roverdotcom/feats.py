@@ -8,6 +8,7 @@ class FeatureState:
         # The values of the tuple is the segmentation of the input to the
         # feature in the order that the segments are specified
         self.segments = segments
+        self.selectors = selectors
         self.selector_mapping = selector_mapping
 
     def select_implementation(self, *args) -> str:
