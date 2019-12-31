@@ -1,3 +1,5 @@
+import os
+
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -71,6 +73,15 @@ class FeatureStreamTests(FeatureTests):
     def test_stream_bound_to_namespaced_key(self):
         stream_key = 'feature:a-feature-stream-key'
         stream = self.client['a-feature-stream-key']
+        self.assertEqual(stream.key, stream_key)
+
+    def test_stream_key_uses_env_prefix_if_set(self):
+        # Set FEATS_ENV for test case
+        os.environ['FEATS_ENV'] = 'envname'
+        stream_key = 'envname:feature:a-feature-stream-key'
+        stream = self.client['a-feature-stream-key']
+        # Unset FEATS_ENV for subsequent tests
+        del os.environ['FEATS_ENV']
         self.assertEqual(stream.key, stream_key)
 
     def test_stream_keeps_redis_connection_object(self):

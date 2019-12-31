@@ -1,3 +1,5 @@
+import os
+
 from typing import List
 from redis import Redis
 from .storage import StorageUnavailableException
@@ -35,8 +37,19 @@ class FeatureStream:
     a RedisClient instance.
     """
     def __init__(self, redis, key):
-        self.key = f"feature:{key}"
+        self.key = self._get_key(key)
         self._redis = redis
+
+    def _get_key(self, key) -> str:
+        """
+        Builds the Redis stream key. If the `FEATS_ENV` environment variable is
+        set, it will be used as the prefix for the feature key.
+        """
+        env = os.getenv('FEATS_ENV')
+
+        if env:
+            return f"{env}:feature:{key}"
+        return f"feature:{key}"
 
     def append(self, state) -> str:
         """
