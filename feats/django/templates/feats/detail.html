@@ -1,0 +1,30 @@
+{% extends "feats/_template.html" %}
+
+{% block main %}
+<h1> {{ feature.name }} </h1>
+{% if feature.description %}
+<p class="lead"/>
+{{ feature.description }}
+</p>
+{% endif %}
+
+<h2> Implementations </h2>
+<dl>
+    {% for name, impl in feature.feature.implementations.items %}
+    <dt>
+        {% if impl is feature.feature.default_implementation %}
+        (Default)
+        {% endif %}
+        {{ name }}
+    </dt>
+    <dd>
+        {% if impl.description %}
+            {{ impl.description }}
+        {% else %}
+            No description provided
+        {% endif %}
+    </dd>
+    {% endfor %}
+</dl>
+
+{% endblock %}

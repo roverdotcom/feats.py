@@ -2,9 +2,8 @@
 <nav>
 	<ol class="flex-column">
 		{% for feature in features %}
-		<li> 
-			{% url 'feats:detail' feature.name as feature_url %}
-			<a href="{{ feature_url }}">{{feature.name}}</a>
+        <li>
+            <a href="{% url 'feats:detail' feature.name %}">{{feature.name}}</a>
 		</li>
 		{% endfor %}
 	</ol>

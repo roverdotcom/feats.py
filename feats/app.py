@@ -37,8 +37,8 @@ class FeatureHandle:
         The implementation is found using any configured segmentations and
         selectors for the feature.
         """
-        name = self.find(*args)
-        return self.feature.implementations[name](*args)
+        impl_name = self.find(*args)
+        return self.feature.implementations[impl_name](*args)
 
 
 class App:
@@ -53,7 +53,7 @@ class App:
         """
         # TODO Index by input classes?
         self.segments: List[Segment] = []
-        self.features = []
+        self.features = {}
         self.storage = storage
 
     def feature(self, cls):
@@ -80,10 +80,15 @@ class App:
         MyFeature.create()
         """
         definition = Definition(cls())
-        ft = Feature(definition)
-        self.features.append(ft)
-        # TODO name of feature
-        return FeatureHandle(self, str(cls), ft)
+        feature = Feature(definition)
+        name = cls.__qualname__
+        module = getattr(cls, '__module__', None)
+        if module:
+            name = '.'.join((module, name))
+        handle = FeatureHandle(self, name, feature)
+        # TODO: Prevent double-write
+        self.features[name] = handle
+        return handle
 
     def default(self, fn):
         return default(fn)

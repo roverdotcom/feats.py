@@ -1,9 +1,10 @@
-from django.urls import path
+from django.conf.urls import url
 
 from . import views
 
+app_name = 'feats'
 urlpatterns = [
-        path('', views.Index.as_view(), name='index'),
-        path('<name>', views.Detail.as_view(), name='detail'),
-        path('<name>/edit', views.Change.as_view(), name='update'),
+        url(r'^([^/]+)/edit/$', views.Change.as_view(), name='update'),
+        url(r'^([^/]+)/$', views.Detail.as_view(), name='detail'),
+        url(r'^$', views.Index.as_view(), name='index'),
 ]
