@@ -7,6 +7,7 @@ class Implementation:
     def __init__(self, fn):
         self.fn = fn
         self.name = fn.__name__
+        self.description = fn.__doc__
 
         signature = inspect.signature(fn)
         self.output_type = signature.return_annotation
@@ -27,15 +28,13 @@ class Implementation:
         if errors:
             raise ValueError(errors)
 
-    def __call__(self, *args, **kwargs):
-        return self.fn(*args, **kwargs)
-
 
 class Definition:
     """
     """
 
     def __init__(self, obj):
+        self.description = obj.__doc__
         self.implementations: Dict[str, Implementation] = {}
         self.annotations = defaultdict(list)
         for key in dir(obj):

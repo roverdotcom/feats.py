@@ -2,9 +2,9 @@
 
 {% block main %}
 <h1> {{ feature.name }} </h1>
-{% if feature.description %}
+{% if feature.feature.description %}
 <p class="lead"/>
-{{ feature.description }}
+{{ feature.feature.description }}
 </p>
 {% endif %}
 
@@ -26,5 +26,4 @@
     </dd>
     {% endfor %}
 </dl>
-
 {% endblock %}

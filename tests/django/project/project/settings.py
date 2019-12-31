@@ -128,6 +128,12 @@ FEATS = feats.App(storage=FeatsMemoryStorage())
 
 @FEATS.feature
 class Feature1:
+    """
+    This is a description of Feature1
+    """
     @FEATS.default
     def my_default(self) -> str:
+        """
+        This is a description of my default
+        """
         return "The default"

@@ -38,7 +38,7 @@ class FeatureHandle:
         selectors for the feature.
         """
         impl_name = self.find(*args)
-        return self.feature.implementations[impl_name](*args)
+        return self.feature.implementations[impl_name].fn(*args)
 
 
 class App:

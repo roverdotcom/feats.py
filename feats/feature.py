@@ -42,6 +42,10 @@ class Feature:
         self.definition = definition
 
     @property
+    def description(self):
+        return self.definition.description
+
+    @property
     def input_types(self):
         return self.definition.implementations[0].input_types
 
