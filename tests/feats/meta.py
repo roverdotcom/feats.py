@@ -65,11 +65,11 @@ class ImplementationTests(TestCase):
 
         with self.subTest("call"):
             with self.subTest("nullary"):
-                self.assertEqual(Implementation(obj.nullary)(), "nullary")
+                self.assertEqual(Implementation(obj.nullary).fn(), "nullary")
             with self.subTest("unary"):
-                self.assertEqual(Implementation(obj.unary)("10"), 10)
+                self.assertEqual(Implementation(obj.unary).fn("10"), 10)
             with self.subTest("binary"):
-                self.assertEqual(Implementation(obj.binary)("1", 2), 2.0)
+                self.assertEqual(Implementation(obj.binary).fn("1", 2), 2.0)
 
     def test_incomplete(self):
         obj = Incomplete()

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict
 
 from .storage import Storage
 from .feature import Feature
@@ -18,7 +18,6 @@ class FeatureHandle:
         """
         Returns the name of the implementation to use for the argument(s).
         """
-
         states = self.app.storage[self.name]
         try:
             state = states[-1]
@@ -51,10 +50,20 @@ class App:
         """
         storage: where to store and retrieve feature states
         """
-        # TODO Index by input classes?
-        self.segments: List[Segment] = []
-        self.features = {}
+        self.segments: Dict[str, Segment] = {}
+        self.features: Dict[str, FeatureHandle] = {}
         self.storage = storage
+
+    def _name(self, cls):
+        """
+        Constructs the fully qualified name of the given class.
+        This includes the module path, if any, and the class's qualified name.
+        """
+        name = cls.__qualname__
+        module = getattr(cls, '__module__', None)
+        if module:
+            name = '.'.join((module, name))
+        return name
 
     def feature(self, cls):
         """
@@ -66,13 +75,13 @@ class App:
         implementation to use.
 
         Example:
-        @feats.feature
+        @my_app.feature
         class MyFeature:
-            @feats.default
-            def old_implementation(self):
+            @my_app.default
+            def old_implementation(self) -> OldImplementation:
                 return OldImplementation()
 
-            def new_implementation(self):
+            def new_implementation(self) -> NewImplementation:
                 return NewImplementation()
 
         # defaults to returning OldImplementation unless state has been
@@ -81,22 +90,39 @@ class App:
         """
         definition = Definition(cls())
         feature = Feature(definition)
-        name = cls.__qualname__
-        module = getattr(cls, '__module__', None)
-        if module:
-            name = '.'.join((module, name))
+        name = self._name(cls)
         handle = FeatureHandle(self, name, feature)
         # TODO: Prevent double-write
         self.features[name] = handle
         return handle
 
     def default(self, fn):
+        """
+        Annotates the given function as the default implementation of the feature.
+        Only valid for functions inside of a class annotated with @feature
+        """
         return default(fn)
 
     def segment(self, cls):
+        """
+        TODO: Clearer Docs
+        Initializes the wrapped class and returns a handle to the registered
+        segment.
+
+        Example
+        @my_app.segment
+        class MySegment:
+            def integers(self, i: int) -> str:
+                return str(i)
+
+            def floats(self, f: float) -> str:
+                return str(f)
+        """
+
         definition = Definition(cls())
         seg = Segment(definition)
-        self.segments.append(seg)
+        name = self._name(cls)
+        self.segments[name] = seg
         return seg
 
     def configure_feature(self, feature: Feature, state: FeatureState):
@@ -107,8 +133,9 @@ class App:
         """
         Find the segments which can take the same inputs as the given class
         """
+        # TODO: Consider indexing segments by input types
         found = []
-        for segment in self.segments:
+        for segment in self.segments.values():
             for impl in segment.impementations:
                 if impl.input_type == input_cls:
                     found.append(segment)
