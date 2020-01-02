@@ -1,12 +1,8 @@
 <p>
 Results will be stored in TODO: PERSISTER MAPPING
 </p>
-<form method="post">
+<form method="post" action="">
     {% csrf_token %}
-    <input type="hidden" name="type" value="experiment"/>
-    {% for impl_name, impl in feature.feature.implementations.items %}
-    <label for="{{impl_name}}_weight">{{impl_name}}</label>
-    <input name="{{impl_name}}_weight" id="{{impl_name}}_weight" type="number" min="0" placeholder="Relative Weight" value="0"/>
-    {% endfor %}
+    {{ form }}
     <input type="submit" value="Save"/>
 </form>

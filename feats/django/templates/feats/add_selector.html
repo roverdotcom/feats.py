@@ -35,7 +35,7 @@
                 Always selects a single implementation to be used for the linked
                 segments.
             </summary>
-            {% include "feats/selectors/static/add_form.html" %}
+            {% include "feats/selectors/static/add_form.html" with form=forms.static %}
         </details>
         </dd>
         <dt>Rollouts</dt>
@@ -53,7 +53,7 @@
 
                 Useful for doing releases of new features or implementations.
             </summary>
-            {% include "feats/selectors/rollout/add_form.html" %}
+            {% include "feats/selectors/rollout/add_form.html" with form=forms.rollout %}
         </details>
         </dd>
         <dt>Experiments</dt>
@@ -69,7 +69,7 @@
 
                 Useful for doing product A/B tests.
             </summary>
-            {% include "feats/selectors/experiment/add_form.html" %}
+            {% include "feats/selectors/experiment/add_form.html" with form=forms.experiment %}
         </details>
         </dd>
     </dl>
