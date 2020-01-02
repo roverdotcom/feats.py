@@ -36,6 +36,7 @@ class ChangeSegmentation(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['feature'] = self.feature
+        return context
 
 
 class AddSelector(TemplateView):
@@ -48,6 +49,7 @@ class AddSelector(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['feature'] = self.feature
+        return context
 
 
 class ChangeSelector(TemplateView):
@@ -65,3 +67,4 @@ class ChangeSelector(TemplateView):
         context = super().get_context_data(**kwargs)
         context['feature'] = self.feature
         context['selector'] = self.selector
+        return context
