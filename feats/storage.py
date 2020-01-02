@@ -17,7 +17,3 @@ The Memory storage keeps all data in memory. When the application exits, all dat
 will be lost.
 Mainly useful for testing environments.
 """
-
-
-class StorageUnavailableException(Exception):
-    pass

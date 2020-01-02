@@ -1,9 +1,6 @@
 import json
 from .selector import Selector
-
-
-class InvalidSerializerVersion(Exception):
-    pass
+from .errors import InvalidSerializerVersion
 
 
 class FeatureState:
