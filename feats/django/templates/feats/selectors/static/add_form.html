@@ -1,8 +1,11 @@
 <form action="" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="type" value="static"/>
     <select name="value" required>
         <option value="" selected>Select an implementation</option>
-        {% for impl in feature.feature.implementations %}
+        {% for impl_name, impl in feature.feature.implementations.items %}
         <option value="{{impl.name}}">{{impl.name}}</option>
         {% endfor %}
     </select>
+    <input type="submit" value="Create"/>
 </form>

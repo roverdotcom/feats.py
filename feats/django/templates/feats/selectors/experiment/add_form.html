@@ -1,12 +1,12 @@
-<h1> Create a new Experiment for {{feature.name}} </h1>
 <p>
 Results will be stored in TODO: PERSISTER MAPPING
 </p>
-<form>
+<form method="post">
+    {% csrf_token %}
     <input type="hidden" name="type" value="experiment"/>
     {% for impl_name, impl in feature.feature.implementations.items %}
     <label for="{{impl_name}}_weight">{{impl_name}}</label>
-    <input name="{{impl_name}}_weight" id="{{impl_name}}_weight" type="number" min="0" placeholder="Relative Weight"/>
+    <input name="{{impl_name}}_weight" id="{{impl_name}}_weight" type="number" min="0" placeholder="Relative Weight" value="0"/>
     {% endfor %}
     <input type="submit" value="Save"/>
 </form>
