@@ -1,5 +1,3 @@
-import os
-
 from typing import List
 from redis import Redis
 from .storage import StorageUnavailableException
@@ -36,19 +34,17 @@ class FeatureStream:
     It should not be initialized directly but instead returned from keying off
     a RedisClient instance.
     """
-    def __init__(self, redis, key):
-        self.key = self._get_key(key)
+    def __init__(self, redis, key, prefix=None):
+        self.key = self._get_key(key, prefix)
         self._redis = redis
 
-    def _get_key(self, key) -> str:
+    def _get_key(self, key, prefix) -> str:
         """
-        Builds the Redis stream key. If the `FEATS_ENV` environment variable is
-        set, it will be used as the prefix for the feature key.
+        Builds the Redis stream key. If `prefix` is provided, it will be used
+        as the prefix for the feature key.
         """
-        env = os.getenv('FEATS_ENV')
-
-        if env:
-            return f"{env}:feature:{key}"
+        if prefix:
+            return f"{prefix}:feature:{key}"
         return f"feature:{key}"
 
     def append(self, state) -> str:
@@ -116,7 +112,8 @@ class RedisClient:
     Initializing this class initializes the redis connection client but does
     _not_ test the connection to redis server.
     """
-    def __init__(self, host='localhost', port=6379, db=0, **options):
+    def __init__(self, host='localhost', port=6379, db=0, stream_prefix=None, **options):
+        self.stream_prefix = stream_prefix
         self._connection_object = self._connect(host, port, db, **options)
 
     def _connect(self, host, port, db, **options):
@@ -156,6 +153,8 @@ class RedisClient:
     def __getitem__(self, key: str) -> FeatureStream:
         """
         The main way by which streams are interacted with. Use the feature name
-        as the key to return the stream bound to that key
+        as the key to return the stream bound to that key. If `stream_prefix`
+        was provided on client initialization, it will be used as the prefix on
+        the feature key.
         """
-        return FeatureStream(self.connection, key)
+        return FeatureStream(self.connection, key, self.stream_prefix)
