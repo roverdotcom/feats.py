@@ -1,0 +1,35 @@
+{% extends "feats/_template.html" %}
+
+{% block main %}
+{% comment %} TODO: Move the shared feature detail into an include {% endcomment %}
+<section>
+    <h1> {{ feature.name }} </h1>
+    {% if feature.feature.description %}
+    <p class="lead">{{ feature.feature.description }}</p>
+    {% endif %}
+</section>
+<section>
+    <h2>Options</h2>
+    <dl>
+        {% for name, impl in feature.feature.implementations.items %}
+        <dt>
+            {% if impl is feature.feature.default_implementation %}
+            (Default)
+            {% endif %}
+            {{ name }}
+        </dt>
+        <dd>
+            {% if impl.description %}
+                {{ impl.description }}
+            {% else %}
+                No description provided
+            {% endif %}
+        </dd>
+        {% endfor %}
+    </dl>
+</section>
+<section>
+    <h2>Configuration</h2>
+
+</section>
+{% endblock %}

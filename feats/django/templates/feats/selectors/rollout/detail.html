@@ -1,0 +1,23 @@
+Segementation: {{ selector.segment }}
+
+<table>
+    <thead>
+        <tr>
+            <th>
+                Implementation
+            </th>
+            <th>
+                Relative Weight
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for impl_name, rel_weight in selector.weights.items %}
+        <tr>
+            <td>{{impl_name}}</td>
+            <td>{{rel_weight}}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
