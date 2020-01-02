@@ -30,3 +30,7 @@ class StorageUnavailableException(Exception):
 
 class InvalidSerializerVersion(Exception):
     pass
+
+
+class UnknownSegmentName(Exception):
+    pass

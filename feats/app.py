@@ -21,7 +21,7 @@ class FeatureHandle:
         states = self.app.storage[self.name]
         try:
             state_data = states[-1]
-            state = FeatureState.deserialize(state_data)
+            state = FeatureState.deserialize(self.app, state_data)
             name = state.select_implementation(*args)
         except IndexError:
             name = None
@@ -128,7 +128,7 @@ class App:
 
     def configure_feature(self, feature: Feature, state: FeatureState):
         # TODO: Validate state against segments?
-        serialized_state = state.serialize()
+        serialized_state = state.serialize(self)
         self.storage[feature].append(serialized_state)
 
     def find_segments(self, input_cls):

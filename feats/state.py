@@ -1,6 +1,7 @@
 import json
 from .selector import Selector
 from .errors import InvalidSerializerVersion
+from .errors import UnknownSegmentName
 
 
 class FeatureState:
@@ -26,25 +27,26 @@ class FeatureState:
             return None
         return selector.select(*args)
 
-    def _get_module_name(self, klass):
-        name = klass.__qualname__
-        module = getattr(klass, '__module__', None)
-        if module:
-            return '.'.join((module, name))
-        return name
-
-    def serialize(self) -> dict:
+    def serialize(self, app) -> dict:
         """
         Serializes the data we need for the feature state to be stored
+        eg:
+        {
+            'segmentation': 'country,device',
+            'segment:us,android': 'selector:0',
+            'selector:0': '{"type": "experiment", "data": {...json...}}'
+            'created_by': 'foo@bar.com',
+            'version': 'v1',
+        }
         """
         state = {
-            'segmentation': ','.join([self._get_module_name(s) for s in self.segments]),
+            'segmentation': ','.join([app._name(s) for s in self.segments]),
             'created_by': self.created_by,
             'version': self.version,
         }
-        # A map for looking up the key name by selector for later
+        # Build a map of keys to selectors and a reversed version for lookups
         selector_map = {}
-        for selector, i in self.selectors:
+        for i, selector in enumerate(self.selectors):
             key = f'selector:{i}'
             selector_map[selector] = key
             state[key] = json.dumps({
@@ -53,41 +55,56 @@ class FeatureState:
                 'data': selector.serialize_data(),
             })
 
-        for i, (values, selector) in enumerate(self.selector_mapping.items()):
-            segments = ','.join(values)
+        for values_tuple, selector in self.selector_mapping.items():
+            segments = ','.join(values_tuple)
             key = f'segment:{segments}'
+            # Get the key from the reversed map (selector instance -> key)
             state[key] = selector_map[selector]
 
         return state
 
     @classmethod
-    def _build_segment(cls, key, value):
-        # TODO: reference a map to get the class from the module name
-        pass
+    def _get_segment(cls, app, segment_name):
+        """
+        Fetches the segment from our application related to the fully qualified name
+        """
+        segment = app.segments.get(segment_name)
+        if segment is None:
+            raise UnknownSegmentName(segment_name)
+        return segment
 
     @classmethod
-    def _build_selector(cls, key, value):
-        # TODO: Get the type then get the type of selector
-        # TODO: deserialize it
-        pass
+    def _build_selector(cls, app, selector_data):
+        """
+        Fetches the correct selector based on the type parameter in the JSON blob,
+        then uses that selector type's deserialize method to construct a selector
+        from the parsed data
+        """
+        parsed = json.loads(selector_data)
+        # TODO: define the below method
+        selector = app.get_selector_by_type(parsed['type'])
+        return selector.deserialize(parsed['data'])
 
     @classmethod
-    def deserialize(cls, data: dict):
+    def deserialize(cls, app, data: dict):
+        """
+        Compiles the serialized data from the store and constructs an
+        instance of FeatureState from it.
+        """
         version = data.pop('version')
         if version != cls.version:
             return InvalidSerializerVersion
         segmentation = data.pop('segmentation').split(',')
         created_by = data.pop('created_by')
         selector_data = {
-            k: cls._build_selector(v) for k, v in data.items() if k.startswith('selector:')
+            k: cls._build_selector(app, v) for k, v in data.items() if k.startswith('selector:')
         }
-        # Join a segment key to a selector instance
         segment_data = {
             k:v for k, v in data.items()
             if k.startswith('segment:')
         }
         selector_mapping = {}
-        segments = [cls._build_segment(segment) for segment in segmentation]
+        segments = [cls._get_segment(app, segment) for segment in segmentation]
         for segment, selector_key in segment_data.items():
             selector = selector_data[selector_key]
             # Convert "selector:us,android" to ('us', 'android')
