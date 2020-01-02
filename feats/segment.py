@@ -47,7 +47,7 @@ class Segment:
         value's type.
         """
         impl = self.find_implementation(type(value))
-        return impl(value)
+        return impl.fn(value)
 
 
 def _check_input_type(definition: Definition):

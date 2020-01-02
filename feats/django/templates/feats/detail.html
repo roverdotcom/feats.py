@@ -32,8 +32,11 @@
         Configuration
         <a class="small" href="{% url 'feats:update' feature.name %}">✎</a>
     </h2>
-    {% if state.selectors %}
+    {% if state.segments %}
     Segmentation: {{ state.segments|join:',' }}
+    {% else %}
+    No Segmentation Specified
+    {% end %}
     <dl>
     {% for selector in state.selectors %}
     <dt>TODO SELECTOR NAME</dt>
