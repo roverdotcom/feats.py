@@ -40,7 +40,7 @@ class RedisClientTests(TestCase):
     def test_calls_feature_stream_with_prefix(self):
         key = 'somefeature'
         prefix = 'myprefix'
-        client = RedisClient(host='redis', stream_prefix=prefix)
+        client = RedisClient(host='redis', key_prefix=prefix)
         with patch.object(FeatureStream, '__init__', return_value=None) as mock:
             client[key]
             mock.assert_called_once_with(client.connection, key, prefix)
@@ -81,8 +81,8 @@ class FeatureStreamTests(FeatureTests):
         stream = self.client['a-feature-stream-key']
         self.assertEqual(stream.key, stream_key)
 
-    def test_stream_key_uses_stream_prefix_if_set(self):
-        client = RedisClient(host='redis', stream_prefix='envname')
+    def test_stream_key_uses_key_prefix_if_set(self):
+        client = RedisClient(host='redis', key_prefix='envname')
         stream_key = 'envname:feature:a-feature-stream-key'
         stream = client['a-feature-stream-key']
         self.assertEqual(stream.key, stream_key)
