@@ -30,6 +30,26 @@ class Detail(TemplateView):
         return context
 
 
+class FeatureSegmentForm(forms.BaseForm):
+    """
+    Maps a Segment to a feature. Intended to be used in a Formset 
+    """
+
+    def __init__(self, feature_handle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['segment'] = forms.ChoiceField(
+            choices=[(name, segment) for name, segment in feature_handle.valid_segments()],
+            required=True
+        )
+
+
+class SelectorSegmentForm(forms.Form):
+    """
+    Maps a selector to the result of segmentation
+    """
+    segment = forms.CharField()
+
+
 class ChangeSegmentation(TemplateView):
     template_name = 'feats/change_segmentation.html'
 
@@ -37,23 +57,71 @@ class ChangeSegmentation(TemplateView):
     def feature(self):
         return app_config.feats_app.features[self.args[0]]
 
+    @property
+    def formset(self):
+        return forms.formset_factory(FeatureSegmentForm)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['feature'] = self.feature
+        context['formset'] = self.formset
         return context
 
 
-class AddStaticForm(forms.BaseForm):
+class StaticSelectorForm(forms.Form):
+    _type = forms.CharField(
+            required=True,
+            widget=forms.HiddenInput,
+            initial='static'
+    )
+
+    def __init__(self, feature_handle, *args, **kwargs):
+        super().__init__(*args, **kwargs)                
+        self.fields['implementation'] = forms.ChoiceField(
+            choices=[(name, name) for name in feature_handle.feature.implementations.keys()]
+        )
+
     def create_selector(self):
         print("Create Static")
 
 
-class AddRolloutForm(forms.BaseForm):
+class RolloutSelectorForm(forms.Form):
+    _type = forms.CharField(
+            required=True,
+            widget=forms.HiddenInput,
+            initial='rollout'
+    )
+
+    def __init__(self, feature_handle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in feature_handle.feature.implementations.keys():
+            self.fields['{}_weight'.format(name)] = forms.IntegerField(
+                required=True,
+                min_value=0,
+                initial=0,
+            )
+
+
     def create_selector(self):
         print("Create Rollout")
 
 
-class AddExperimentForm(forms.BaseForm):
+class ExperimentSelectorForm(forms.Form):
+    _type = forms.CharField(
+        required=True,
+        widget=forms.HiddenInput,
+        initial='experiment'
+    )
+
+    def __init__(self, feature_handle, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in feature_handle.feature.implementations.keys():
+            self.fields['{}_weight'.format(name)] = forms.IntegerField(
+                required=True,
+                min_value=0,
+                initial=0,
+            )
+
     def create_selector(self):
         print("Create Experiment")
 
@@ -61,9 +129,9 @@ class AddExperimentForm(forms.BaseForm):
 class AddSelector(TemplateView):
     template_name = 'feats/add_selector.html'
     forms = {
-        'experiment': AddExperimentForm,
-        'static': AddStaticForm,
-        'rollout': AddRolloutForm,
+        'experiment': ExperimentSelectorForm,
+        'static': StaticSelectorForm,
+        'rollout': RolloutSelectorForm,
     }
 
     @property
@@ -79,66 +147,14 @@ class AddSelector(TemplateView):
         For static selectors, the select box's options are populated with each
         implementation.
         """
-        class Static(AddStaticForm):
-            base_fields = {
-                '_type': forms.CharField(
-                    required=True,
-                    widget=forms.HiddenInput,
-                    initial='static'
-                )
-            }
-
-        class Rollout(AddRolloutForm):
-            base_fields = {
-                '_type': forms.CharField(
-                    required=True,
-                    widget=forms.HiddenInput,
-                    initial='rollout'
-                )
-            }
-
-        class Experiment(AddExperimentForm):
-            base_fields = {
-                '_type': forms.CharField(
-                    required=True,
-                    widget=forms.HiddenInput,
-                    initial='experiment'
-                )
-            }
-
-        base_fields = {}
-        choices = []
-        for name in self.feature.feature.implementations.keys():
-            base_fields['{}_weight'.format(name)] = forms.IntegerField(
-                required=True,
-                min_value=0,
-                initial=0,
-            )
-            choices.append((name, name))
-        Rollout.base_fields.update(base_fields)
-        Experiment.base_fields.update(base_fields)
-        Static.base_fields['value'] = forms.ChoiceField(
-            choices=choices,
-            required=True
-        )
-
-        form_classes = {
-            'rollout': Rollout,
-            'experiment': Experiment,
-            'static': Static,
-        }
-        init_forms = {}
+        feature = self.feature
+        data = {}
         if self.request.method == 'POST':
-            _type = self.request.POST['_type']
-            form_to_bind = form_classes[_type]
-            del form_classes[_type]
-            init_forms[_type] = form_to_bind(
-                self.request.POST,
-                auto_id='id_{}_%s'.format(_type)
-            )
+            data[self.request.POST['_type']] = self.request.POST
 
-        for key, form in form_classes.items():
-            init_forms[key] = form(auto_id='id_{}_%s'.format(key))
+        init_forms = {}
+        for key, form in self.forms.items():
+            init_forms[key] = form(feature, data=data.get(key), auto_id='id_{}_%s'.format(key))
         return init_forms
 
     def get_context_data(self, **kwargs):
