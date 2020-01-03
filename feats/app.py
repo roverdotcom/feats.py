@@ -1,10 +1,12 @@
 from typing import Dict
 
 from .storage import Storage
+from .errors import UnknownSelectorName
 from .feature import Feature
 from .feature import default
 from .meta import Definition
 from .segment import Segment
+from .selector import Experiment, Rollout, Selector, Static
 from .state import FeatureState
 
 
@@ -53,7 +55,11 @@ class App:
         """
         self.segments: Dict[str, Segment] = {}
         self.features: Dict[str, FeatureHandle] = {}
+        self.selectors: Dict[str, Selector] = {}
         self.storage = storage
+
+        for cls in [Experiment, Rollout, Static]:
+            self.register_selector(cls)
 
     def _name(self, cls):
         """
@@ -65,6 +71,27 @@ class App:
         if module:
             name = '.'.join((module, name))
         return name
+
+    def register_selector(self, cls):
+        """
+        A method for registering Selectors with the app for
+        serializing/deserializing
+        """
+        self.selector[self._name(cls)] = cls
+
+    def get_selector(self, class_name):
+        if class_name not in self.selectors:
+            raise UnknownSelectorName(class_name)
+        return self.selectors[class_name]
+
+    def get_segment(self, segment_name):
+        """
+        Fetches the segment from our application related to the fully qualified name
+        """
+        segment = self.segments.get(segment_name)
+        if segment is None:
+            raise UnknownSegmentName(segment_name)
+        return segment
 
     def feature(self, cls):
         """

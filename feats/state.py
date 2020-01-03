@@ -50,8 +50,7 @@ class FeatureState:
             key = f'selector:{i}'
             selector_map[selector] = key
             state[key] = json.dumps({
-                # TODO: define these methods
-                'type': selector.get_type(),
+                'type': app._name(selector),
                 'data': selector.serialize_data(),
             })
 
@@ -64,16 +63,6 @@ class FeatureState:
         return state
 
     @classmethod
-    def _get_segment(cls, app, segment_name):
-        """
-        Fetches the segment from our application related to the fully qualified name
-        """
-        segment = app.segments.get(segment_name)
-        if segment is None:
-            raise UnknownSegmentName(segment_name)
-        return segment
-
-    @classmethod
     def _build_selector(cls, app, selector_data):
         """
         Fetches the correct selector based on the type parameter in the JSON blob,
@@ -81,9 +70,8 @@ class FeatureState:
         from the parsed data
         """
         parsed = json.loads(selector_data)
-        # TODO: define the below method
-        selector = app.get_selector_by_type(parsed['type'])
-        return selector.deserialize(parsed['data'])
+        selector = app.get_selector(parsed['type'])
+        return selector.from_data(parsed['data'])
 
     @classmethod
     def deserialize(cls, app, data: dict):
@@ -104,7 +92,7 @@ class FeatureState:
             if k.startswith('segment:')
         }
         selector_mapping = {}
-        segments = [cls._get_segment(app, segment) for segment in segmentation]
+        segments = [app.get_segment(app, segment) for segment in segmentation]
         for segment, selector_key in segment_data.items():
             selector = selector_data[selector_key]
             # Convert "selector:us,android" to ('us', 'android')

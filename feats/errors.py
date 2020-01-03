@@ -34,3 +34,7 @@ class InvalidSerializerVersion(Exception):
 
 class UnknownSegmentName(Exception):
     pass
+
+
+class UnknownSelectorName(Exception):
+    pass
