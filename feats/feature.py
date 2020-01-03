@@ -47,7 +47,7 @@ class Feature:
 
     @property
     def input_types(self):
-        return self.definition.implementations[0].input_types
+        return next(iter(self.definition.implementations.values())).input_types
 
     @property
     def default_implementation(self):

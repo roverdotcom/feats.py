@@ -39,6 +39,23 @@ class FeatureHandle:
         impl_name = self.find(*args)
         return self.feature.implementations[impl_name].fn(*args)
 
+    def valid_segments(self):
+        """
+        Find the segments which can take the same inputs as the given class
+        """
+        input_type = None
+        if len(self.feature.input_types) == 0:
+            return []
+        elif len(self.feature.input_types) > 1:
+            return []
+        input_type = self.feature.input_types[0]
+        found = []
+        for segment in self.app.segments.values():
+            impl = segment.find_implementation(input_type)
+            if impl is not None:
+                found.append(segment)
+        return found
+
 
 class App:
     """
@@ -128,16 +145,3 @@ class App:
     def configure_feature(self, feature: Feature, state: FeatureState):
         # TODO: Validate state against segments?
         self.storage[feature].append(state)
-
-    def find_segments(self, input_cls):
-        """
-        Find the segments which can take the same inputs as the given class
-        """
-        # TODO: Consider indexing segments by input types
-        found = []
-        for segment in self.segments.values():
-            for impl in segment.impementations:
-                if impl.input_type == input_cls:
-                    found.append(segment)
-                    break
-        return found
