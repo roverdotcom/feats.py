@@ -67,6 +67,7 @@ class Rollout(Selector):
     """
     def __init__(self, segment: Segment, weights: Weights):
         self.segment = segment
+        self.weights = weights
         self.population = list(weights.keys())
         if len(self.population) == 0:
             raise ValueError("Must supply at least one weight to the selector")

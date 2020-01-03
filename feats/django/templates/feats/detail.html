@@ -30,21 +30,23 @@
 <section>
     <h2>
         Configuration
-        <a class="small" href="{% url 'feats:update' feature.name %}">✎</a>
     </h2>
-    {% if state.segments %}
-    Segmentation: {{ state.segments|join:',' }}
+    {% if feature.feature.input_types %}
+        {% if state.segments %}
+        Segmentation: {{ state.segments|join:',' }}
+        {% else %}
+        No Segmentation Specified
+        {% endif %}
+        <a class="small" href="{% url 'feats:update-segmentation' feature.name %}">✎</a>
+        {% for name, selector in state.selectors %}
+        {{selector.name}}
+        <a class="small" href="{% url 'feats:update-selector' feature.name selector.name %}">Edit</a>
+        {% empty %}
+        <p>No selectors configured. The default will always be used.</p>
+        {% endfor %}
+        <a class="small" href="{% url 'feats:add-selector' feature.name %}">Add Selector</a>
     {% else %}
-    No Segmentation Specified
-    {% end %}
-    <dl>
-    {% for selector in state.selectors %}
-    <dt>TODO SELECTOR NAME</dt>
-    <dd>TODO SELECTOR RENDER</dd>
-    {% endfor %}
-    </dl>
-    {% else %}
-    <p>No selectors configured. The default will always be used.</p>
+       TODO: No-args
     {% endif %}
 </section>
 

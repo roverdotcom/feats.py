@@ -35,7 +35,7 @@ class Segment:
                 found.append(impl)
 
         if len(found) == 0:
-            raise ValueError("No Implementation which matches {}".format(cls))
+            return None
         elif len(found) > 1:
             # TODO: Better error messages about which impls match
             raise ValueError("Multiple implementations match {}".format(cls))
@@ -47,6 +47,10 @@ class Segment:
         value's type.
         """
         impl = self.find_implementation(type(value))
+        if impl is None:
+            raise ValueError(
+                "No Implementation which matches {}".format(type(value))
+            )
         return impl.fn(value)
 
 

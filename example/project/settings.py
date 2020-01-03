@@ -132,8 +132,20 @@ class Feature1:
     This is a description of Feature1
     """
     @FEATS.default
-    def my_default(self) -> str:
+    def my_default(self, s: str) -> str:
         """
         This is a description of my default
         """
         return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
+@FEATS.segment
+class Length:
+    def string(self, s: str) -> str:
+        return str(len(s))
