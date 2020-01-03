@@ -53,7 +53,7 @@ class AddRolloutForm(forms.BaseForm):
         print("Create Rollout")
 
 
-class AddExperimentForm(forms.Form):
+class AddExperimentForm(forms.BaseForm):
     def create_selector(self):
         print("Create Experiment")
 
@@ -132,10 +132,13 @@ class AddSelector(TemplateView):
             _type = self.request.POST['_type']
             form_to_bind = form_classes[_type]
             del form_classes[_type]
-            init_forms[_type] = form_to_bind(self.request.POST)
+            init_forms[_type] = form_to_bind(
+                self.request.POST,
+                auto_id='id_{}_%s'.format(_type)
+            )
 
         for key, form in form_classes.items():
-            init_forms[key] = form()
+            init_forms[key] = form(auto_id='id_{}_%s'.format(key))
         return init_forms
 
     def get_context_data(self, **kwargs):
