@@ -1,7 +1,5 @@
 import json
-from .selector import Selector
 from .errors import InvalidSerializerVersion
-from .errors import UnknownSegmentName
 
 
 class FeatureState:
@@ -30,14 +28,6 @@ class FeatureState:
     def serialize(self, app) -> dict:
         """
         Serializes the data we need for the feature state to be stored
-        eg:
-        {
-            'segmentation': 'country,device',
-            'segment:us,android': 'selector:0',
-            'selector:0': '{"type": "experiment", "data": {...json...}}'
-            'created_by': 'foo@bar.com',
-            'version': 'v1',
-        }
         """
         state = {
             'segmentation': ','.join([app._name(s) for s in self.segments]),
@@ -70,8 +60,9 @@ class FeatureState:
         from the parsed data
         """
         parsed = json.loads(selector_data)
-        selector = app.get_selector(parsed['type'])
-        return selector.from_data(parsed['data'])
+        SelectorClass = app.get_selector(parsed['type'])
+        # Initialize the appropriate selector
+        return SelectorClass.from_data(parsed['data'])
 
     @classmethod
     def deserialize(cls, app, data: dict):
@@ -88,11 +79,11 @@ class FeatureState:
             k: cls._build_selector(app, v) for k, v in data.items() if k.startswith('selector:')
         }
         segment_data = {
-            k:v for k, v in data.items()
-            if k.startswith('segment:')
+            k: v for k, v in data.items() if k.startswith('segment:')
         }
-        selector_mapping = {}
         segments = [app.get_segment(app, segment) for segment in segmentation]
+
+        selector_mapping = {}
         for segment, selector_key in segment_data.items():
             selector = selector_data[selector_key]
             # Convert "selector:us,android" to ('us', 'android')

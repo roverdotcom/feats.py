@@ -1,7 +1,7 @@
 from typing import Dict
 
 from .storage import Storage
-from .errors import UnknownSelectorName
+from .errors import UnknownSelectorName, UnknownSegmentName
 from .feature import Feature
 from .feature import default
 from .meta import Definition
@@ -91,7 +91,7 @@ class App:
 
     def register_selector(self, cls):
         """
-        A method for registering Selectors with the app for
+        A method for registering Selectors by module name with the app for
         serializing/deserializing
         """
         self.selector[self._name(cls)] = cls
