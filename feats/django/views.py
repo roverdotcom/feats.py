@@ -3,18 +3,18 @@ from django.apps import apps
 from django.http.response import HttpResponseRedirect
 from django.http.response import HttpResponseBadRequest
 from django.urls import reverse
-from django.views.generic.base import TemplateView
+from django.views.generic import base
 
 app_config = apps.get_app_config('feats')
 
-
-class Index(TemplateView):
-    template_name = 'feats/index.html'
-
+class TemplateView(base.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['features'] = app_config.feats_app.features.values()
         return context
+
+class Index(TemplateView):
+    template_name = 'feats/index.html'
 
 
 class Detail(TemplateView):

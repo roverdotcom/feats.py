@@ -11,19 +11,22 @@
 
 		<title>Feats</title>
 	</head>
-	<body>
+	<body class="container-fluid">
 		<header>
 			{% block header %}
 			{% endblock %}
 		</header>
-		<nav>
-			{% block sidebar %}
-			{% endblock %}
-
-		</nav>
-		<main>
-			{% block main %}{% endblock %}
-		</main>
+		<div class="row">
+			<aside class="col-2 flex-column">
+				{% block sidebar %}
+				{% include "feats/_sidebar.html" with features=features feature=feature only %}
+				{% endblock %}
+			</aside>
+			<main class="col-10 bg-light">
+				{% block main %}
+				{% endblock %}
+			</main>
+		</div>
 		<footer>
 			{% block footer %}{% endblock %}
 		</footer>

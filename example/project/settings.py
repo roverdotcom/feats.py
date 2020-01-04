@@ -145,6 +145,120 @@ class Feature1:
         return "An Alternative"
 
 
+@FEATS.feature
+class Feature2:
+    """
+    This is a description of Feature1
+    """
+    @FEATS.default
+    def my_default(self, s: str) -> str:
+        """
+        This is a description of my default
+        """
+        return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
+@FEATS.feature
+class Feature3:
+    """
+    This is a description of Feature1
+    """
+    @FEATS.default
+    def my_default(self, s: str) -> str:
+        """
+        This is a description of my default
+        """
+        return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
+@FEATS.feature
+class Feature4:
+    """
+    This is a description of Feature1
+    """
+    @FEATS.default
+    def my_default(self, s: str) -> str:
+        """
+        This is a description of my default
+        """
+        return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
+@FEATS.feature
+class Feature5:
+    """
+    This is a description of Feature1
+    """
+    @FEATS.default
+    def my_default(self, s: str) -> str:
+        """
+        This is a description of my default
+        """
+        return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
+@FEATS.feature
+class Feature6:
+    """
+    This is a description of Feature1
+    """
+    @FEATS.default
+    def my_default(self, s: str) -> str:
+        """
+        This is a description of my default
+        """
+        return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
+@FEATS.feature
+class Feature7:
+    """
+    This is a description of Feature1
+    """
+    @FEATS.default
+    def my_default(self, s: str) -> str:
+        """
+        This is a description of my default
+        """
+        return "The default"
+
+    def my_alternative(self, s: str) -> str:
+        """
+        This is a description of my alternative
+        """
+        return "An Alternative"
+
+
 @FEATS.segment
 class Length:
     def string(self, s: str) -> str:
