@@ -45,15 +45,15 @@ class FeatureHandle:
         """
         input_type = None
         if len(self.feature.input_types) == 0:
-            return []
+            return {}
         elif len(self.feature.input_types) > 1:
-            return []
+            return {}
         input_type = self.feature.input_types[0]
-        found = []
-        for segment in self.app.segments.values():
+        found = {}
+        for name, segment in self.app.segments.items():
             impl = segment.find_implementation(input_type)
             if impl is not None:
-                found.append(segment)
+                found[name] = segment
         return found
 
 

@@ -7,7 +7,7 @@ class Implementation:
     def __init__(self, fn):
         self.fn = fn
         self.name = fn.__name__
-        self.description = fn.__doc__
+        self.description = inspect.getdoc(fn)
 
         signature = inspect.signature(fn)
         self.output_type = signature.return_annotation
