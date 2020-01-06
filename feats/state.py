@@ -72,7 +72,7 @@ class FeatureState:
         """
         version = data.pop('version')
         if version != cls.version:
-            return InvalidSerializerVersion
+            raise InvalidSerializerVersion
         segmentation = json.loads(data.pop('segmentation'))
         created_by = data.pop('created_by')
         selector_data = {
@@ -92,7 +92,7 @@ class FeatureState:
 
         return cls(
             segments=segments,
-            selectors=selector_data.values(),
+            selectors=list(selector_data.values()),
             selector_mapping=selector_mapping,
             created_by=created_by,
         )
