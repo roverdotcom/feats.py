@@ -30,7 +30,7 @@ class FeatureState:
         Serializes the data we need for the feature state to be stored
         """
         state = {
-            'segmentation': ','.join([app._name(s) for s in self.segments]),
+            'segmentation': json.dumps([app._name(s) for s in self.segments]),
             'created_by': self.created_by,
             'version': self.version,
         }
@@ -45,7 +45,7 @@ class FeatureState:
             })
 
         for values_tuple, selector in self.selector_mapping.items():
-            segments = ','.join(values_tuple)
+            segments = json.dumps(values_tuple)
             key = f'segment:{segments}'
             # Get the key from the reversed map (selector instance -> key)
             state[key] = selector_map[selector]
@@ -73,7 +73,7 @@ class FeatureState:
         version = data.pop('version')
         if version != cls.version:
             return InvalidSerializerVersion
-        segmentation = data.pop('segmentation').split(',')
+        segmentation = json.loads(data.pop('segmentation'))
         created_by = data.pop('created_by')
         selector_data = {
             k: cls._build_selector(app, v) for k, v in data.items() if k.startswith('selector:')
@@ -86,8 +86,8 @@ class FeatureState:
         selector_mapping = {}
         for segment, selector_key in segment_data.items():
             selector = selector_data[selector_key]
-            # Convert "selector:us,android" to ('us', 'android')
-            key = tuple(segment.split(':')[1].split(','))
+            # Convert "selector:['us','android']" to ('us', 'android')
+            key = tuple(json.loads(segment.split(':', 1)[1]))
             selector_mapping[key] = selector
 
         return cls(

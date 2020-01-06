@@ -5,9 +5,10 @@ from .meta import Definition, Implementation
 
 
 class Segment:
-    def __init__(self, definition: Definition):
+    def __init__(self, name: str, definition: Definition):
         _check_output_type(definition)
         _check_input_type(definition)
+        self.name = name
         self.definition = definition
         self.input_mapping = {
             impl.input_types[0]: impl

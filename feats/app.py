@@ -94,7 +94,7 @@ class App:
         A method for registering Selectors by module name with the app for
         serializing/deserializing
         """
-        self.selector[self._name(cls)] = cls
+        self.selectors[self._name(cls)] = cls
 
     def get_selector(self, class_name):
         if class_name not in self.selectors:
@@ -164,9 +164,9 @@ class App:
                 return str(f)
         """
 
-        definition = Definition(cls())
-        seg = Segment(definition)
         name = self._name(cls)
+        definition = Definition(cls())
+        seg = Segment(name, definition)
         self.segments[name] = seg
         return seg
 

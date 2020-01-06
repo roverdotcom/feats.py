@@ -102,7 +102,7 @@ class Rollout(Selector):
 
     def serialize_data(self, app):
         return {
-            'segment': app._name(self.segment),
+            'segment': self.segment.name,
             'weights': self.weights,
         }
 
@@ -175,7 +175,7 @@ class Experiment(Selector):
 
     def serialize_data(self, app):
         return {
-            'segment': app._name(self.segment),
+            'segment': self.segment.name,
             'persister': app._name(self.persister),
             'weights': self.weights,
         }
