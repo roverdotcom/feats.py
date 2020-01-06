@@ -120,6 +120,35 @@ class App:
         """
         return default(fn)
 
+    def boolean(self, fn):
+        """
+        Similar to `feature` but operates on a function. Initializes the
+        wrapped function and returns a handle to the registered boolean
+        feature.
+
+        The handle has a method, create, which can be invoked to obtain an
+        implementation to use.
+
+        Example:
+        @my_app.boolean
+        def MyFeature() -> bool:
+            return True
+
+        This function will be automatically annotated as the default
+        implementation.
+        """
+        if not callable(fn):
+            raise ValueError("Boolean feature must be a function")
+
+        fn = self.default(fn)
+        definition = Definition(fn)
+        feature = Feature(definition)
+        name = fn.__name__
+        handle = FeatureHandle(self, name, feature)
+        self.features[name] = handle
+
+        return handle
+
     def segment(self, cls):
         """
         TODO: Clearer Docs

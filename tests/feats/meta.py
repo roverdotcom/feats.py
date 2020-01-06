@@ -31,6 +31,25 @@ class Empty:
     pass
 
 
+def FullySpecifiedFunc(arg: str) -> bool:
+    return True
+
+
+FullySpecifiedFunc._feats_annotations_ = ["default"]
+
+
+def NoReturnTypeFunc(arg: str):
+    return True
+
+
+def NoInputTypeFunc(arg) -> bool:
+    return True
+
+
+def PartialInputTypeFunc(arg1, arg2: str) -> bool:
+    return True
+
+
 class ImplementationTests(TestCase):
     def test_fully_specified(self):
         obj = FullySpecified()
@@ -112,6 +131,29 @@ class DefinitionTests(TestCase):
                 self.assertEqual(len(special), 2)
                 names = set([x.name for x in special])
                 self.assertEqual(set(["binary", "unary"]), names)
+
+            with self.subTest("undeclared"):
+                self.assertEqual(len(definition.annotations["undeclared"]), 0)
+
+    def test_invalid_fns(self):
+        for fn in (NoReturnTypeFunc, NoInputTypeFunc, PartialInputTypeFunc):
+            with self.subTest(fn), self.assertRaises(ValueError):
+                Definition(fn)
+
+    def test_fully_specified_fn(self):
+        fn = FullySpecifiedFunc
+        definition = Definition(fn)
+        with self.subTest("impls"):
+            impls = definition.implementations
+            self.assertEqual(len(impls), 1)
+            self.assertTrue(fn.__name__ in impls)
+            self.assertEqual(fn, impls[fn.__name__].fn)
+
+        with self.subTest("annotations"):
+            self.assertEqual(len(definition.annotations), 1)
+            default = definition.annotations["default"]
+            self.assertEqual(len(default), 1)
+            self.assertEqual(default[0].fn, fn)
 
             with self.subTest("undeclared"):
                 self.assertEqual(len(definition.annotations["undeclared"]), 0)
