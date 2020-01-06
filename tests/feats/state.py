@@ -30,7 +30,7 @@ class SerializeStateTests(TestCase):
         selector = self._create_rollout_selector()
         return {
             'version': FeatureState.version,
-            'segment:["segment"]': 'selector:0',
+            'segment:["value_match"]': 'selector:0',
             'segmentation': json.dumps([key]),
             'created_by': 'foo@bar.baz',
             'selector:0': json.dumps({
@@ -48,7 +48,7 @@ class SerializeStateTests(TestCase):
 
     def _build_selector_mapping(self, selectors):
         return {
-            ('segment',): selectors[0],
+            ('value_match',): selectors[0],
         }
 
     def _create_feature_state(self):
@@ -94,5 +94,5 @@ class SerializeStateTests(TestCase):
         constructed = self._create_feature_state()
         self.assertEqual(feature_state.segments, constructed.segments)
         self.assertEqual(feature_state.created_by, constructed.created_by)
-        self.assertEqual(feature_state.selector_mapping[('segment',)].__class__, Rollout)
+        self.assertEqual(feature_state.selector_mapping[('value_match',)].__class__, Rollout)
         self.assertEqual(feature_state.selectors[0].__class__, Rollout)
