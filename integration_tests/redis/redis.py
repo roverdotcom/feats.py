@@ -4,7 +4,7 @@ from unittest.mock import patch
 from feats.redis import FeatureStream
 from feats.redis import RedisClient
 from feats.redis import StreamIterator
-from feats.storage import StorageUnavailableException
+from feats.errors import StorageUnavailableException
 
 
 class RedisClientTests(TestCase):

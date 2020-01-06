@@ -22,3 +22,19 @@ This includes:
 Ideally, we can print out the offending implementation and a fix for it, or give
 reasons about the implementation that the person can solve.
 """
+
+
+class StorageUnavailableException(Exception):
+    pass
+
+
+class InvalidSerializerVersion(Exception):
+    pass
+
+
+class UnknownSegmentName(Exception):
+    pass
+
+
+class UnknownSelectorName(Exception):
+    pass
