@@ -5,6 +5,9 @@ from django.http.response import HttpResponseBadRequest
 from django.urls import reverse
 from django.views.generic import base
 
+from feats import selector
+from feats.state import FeatureState
+
 app_config = apps.get_app_config('feats')
 
 class TemplateView(base.TemplateView):
@@ -26,7 +29,9 @@ class Detail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['feature'] = self.feature
+        feature = self.feature
+        context['feature'] = feature
+        context['state'] = self.feature.get_current_state()
         return context
 
 
@@ -79,14 +84,19 @@ class StaticSelectorForm(forms.Form):
             initial='static'
     )
 
+
     def __init__(self, feature_handle, *args, **kwargs):
         super().__init__(*args, **kwargs)                
+        self.feature_handle = feature_handle
         self.fields['implementation'] = forms.ChoiceField(
             choices=[(name, name) for name in feature_handle.feature.implementations.keys()]
         )
 
     def create_selector(self):
-        print("Create Static")
+        return selector.Static.from_data(
+                self.feature_handle.app,
+                {'value': self.cleaned_data['implementation']}
+        )
 
 
 class RolloutSelectorForm(forms.Form):
@@ -98,8 +108,12 @@ class RolloutSelectorForm(forms.Form):
 
     def __init__(self, feature_handle, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.feature_handle = feature_handle
+        self.fields['segment'] = forms.ChoiceField(
+            choices=[(name, name) for name in feature_handle.feature.implementations.keys()]
+        )
         for name in feature_handle.feature.implementations.keys():
-            self.fields['{}_weight'.format(name)] = forms.IntegerField(
+            self.fields['weight-{}'.format(name)] = forms.IntegerField(
                 required=True,
                 min_value=0,
                 initial=0,
@@ -107,7 +121,16 @@ class RolloutSelectorForm(forms.Form):
 
 
     def create_selector(self):
-        print("Create Rollout")
+        segment = self.cleaned_data['segment']
+        weights = {}
+        for name in self.feature_handle.feature.implementation.keys():
+            weight = self.cleaned_data['weights[{}]'.format(name)]
+            weights[name] = weight
+        return selector.Rollout.from_data(
+            self.feature_handle.app, {
+            'weights': weights,
+            'segment': segment
+        })
 
 
 class ExperimentSelectorForm(forms.Form):
@@ -120,14 +143,24 @@ class ExperimentSelectorForm(forms.Form):
     def __init__(self, feature_handle, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in feature_handle.feature.implementations.keys():
-            self.fields['{}_weight'.format(name)] = forms.IntegerField(
+            self.fields['weights[{}]'.format(name)] = forms.IntegerField(
                 required=True,
                 min_value=0,
                 initial=0,
             )
 
     def create_selector(self):
-        print("Create Experiment")
+        segment = self.cleaned_data['segment']
+        weights = {}
+        for name in self.feature_handle.feature.implementation.keys():
+            weight = self.cleaned_data['weights[{}]'.format(name)]
+            weights[name] = weight
+        return selector.Experiment.from_data(
+            self.feature_handle.app, {
+            'persister': "# TODO:", # Needs App support for registering persisters
+            'weights': weights,
+            'segment': segment
+        })
 
 
 class AddSelector(TemplateView):
@@ -179,7 +212,24 @@ class AddSelector(TemplateView):
             return HttpResponseBadRequest()
 
         if bound_form.is_valid():
-            form.create_selector()
+            feature = self.feature
+            selector = form.create_selector()
+            state = feature.get_current_state()
+            if state is None:
+                state = FeatureState(
+                        segments=[],
+                        selectors=[selector],
+                        selector_mapping={},
+                        created_by=self.request.user.username
+                )
+            else:
+                state = FeatureState(
+                        segments=state.segments,
+                        selectors=state.selectors + [selector],
+                        selector_mapping=state.selector_mapping,
+                        created_by=self.request.user.username
+                )
+            self.feature.set_state(state)
             return HttpResponseRedirect(
                 reverse('feats:detail', args=self.args)
             )

@@ -37,9 +37,9 @@
         No Segmentation Specified
         {% endif %}
         <a class="small" href="{% url 'feats:update-segmentation' feature.name %}">✎</a>
-        {% for name, selector in state.selectors %}
-        {{selector.name}}
-        <a class="small" href="{% url 'feats:update-selector' feature.name selector.name %}">Edit</a>
+        {% for selector in state.selectors %}
+        {{ forloop.counter0 }}
+        <a class="small" href="{% url 'feats:update-selector' feature.name forloop.counter0 %}">Edit</a>
         {% empty %}
         <p>No selectors configured. The default will always be used.</p>
         {% endfor %}

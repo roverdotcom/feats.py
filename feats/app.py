@@ -41,8 +41,8 @@ class FeatureHandle:
         return self.feature.implementations[impl_name].fn(*args)
 
     def set_state(self, new_state: FeatureState):
-        serialized_state = state.serialize(self.app)
-        self.storage[feature].append(serialized_state)
+        serialized_state = new_state.serialize(self.app)
+        self.app.storage[self.name].append(serialized_state)
         
     def get_current_state(self) -> FeatureState:
         states = self.app.storage[self.name]
