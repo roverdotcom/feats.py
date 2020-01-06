@@ -1,20 +1,16 @@
 {% extends "feats/_template.html" %}
 {% block main %}
-{% if feature.valid_segments %}
+{% if formset %}
 <form>
-    <select required multiple>
-        <option value=""> Select at least one Segment </option>
-        {% for name, segment in feature.valid_segments.items %}
-        <option value="{{name}}">{{name}}</option>
-        {% endfor %}
-    </select>
+ 	{{formset}}
+       <input type="submit" value="Submit"/>
 </form>
 {% else %}
 <p>
 There are no registered segments which match the required input type for
 this feature.
 
-A segment which can handle {{feature.input_types.0}} will need to be registered.
+A segment which can handle {{feature.input_types|join:", "}} will need to be registered.
 </p>
 {% endif %}
 {% endblock %}

@@ -30,7 +30,14 @@ class Detail(TemplateView):
         return context
 
 
-class FeatureSegmentForm(forms.BaseForm):
+def feature_segment_formset(feature_handle, *fn_args, **fn_kwargs):
+    class FormsetForm(FeatureSegmentForm):
+        def __init__(self, *args, **kwargs):
+            super().__init__(feature_handle, *args, **kwargs)
+    return forms.formset_factory(FormsetForm, *fn_args, **fn_kwargs)
+
+
+class FeatureSegmentForm(forms.Form):
     """
     Maps a Segment to a feature. Intended to be used in a Formset 
     """
@@ -38,7 +45,7 @@ class FeatureSegmentForm(forms.BaseForm):
     def __init__(self, feature_handle, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['segment'] = forms.ChoiceField(
-            choices=[(name, segment) for name, segment in feature_handle.valid_segments()],
+            choices=[(name, name) for name, segment in feature_handle.valid_segments().items()],
             required=True
         )
 
@@ -57,14 +64,11 @@ class ChangeSegmentation(TemplateView):
     def feature(self):
         return app_config.feats_app.features[self.args[0]]
 
-    @property
-    def formset(self):
-        return forms.formset_factory(FeatureSegmentForm)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['feature'] = self.feature
-        context['formset'] = self.formset
+        feature = self.feature
+        context['feature'] = feature
+        context['formset'] = feature_segment_formset(feature)
         return context
 
 
