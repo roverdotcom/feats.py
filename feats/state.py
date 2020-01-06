@@ -30,7 +30,7 @@ class FeatureState:
         Serializes the data we need for the feature state to be stored
         """
         state = {
-            'segmentation': json.dumps([app._name(s) for s in self.segments]),
+            'segmentation': json.dumps([s.name for s in self.segments]),
             'created_by': self.created_by,
             'version': self.version,
         }
@@ -41,7 +41,7 @@ class FeatureState:
             selector_map[selector] = key
             state[key] = json.dumps({
                 'type': app._name(selector),
-                'data': selector.serialize_data(),
+                'data': selector.serialize_data(app),
             })
 
         for values_tuple, selector in self.selector_mapping.items():
@@ -62,7 +62,7 @@ class FeatureState:
         parsed = json.loads(selector_data)
         SelectorClass = app.get_selector(parsed['type'])
         # Initialize the appropriate selector
-        return SelectorClass.from_data(parsed['data'])
+        return SelectorClass.from_data(app, parsed['data'])
 
     @classmethod
     def deserialize(cls, app, data: dict):
@@ -81,7 +81,7 @@ class FeatureState:
         segment_data = {
             k: v for k, v in data.items() if k.startswith('segment:')
         }
-        segments = [app.get_segment(app, segment) for segment in segmentation]
+        segments = [app.get_segment(segment) for segment in segmentation]
 
         selector_mapping = {}
         for segment, selector_key in segment_data.items():

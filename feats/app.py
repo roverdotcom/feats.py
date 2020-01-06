@@ -83,7 +83,10 @@ class App:
         Constructs the fully qualified name of the given class.
         This includes the module path, if any, and the class's qualified name.
         """
-        name = cls.__qualname__
+        if hasattr(cls, '__qualname__'):
+            name = cls.__qualname__
+        else:
+            name = cls.__class__.__qualname__
         module = getattr(cls, '__module__', None)
         if module:
             name = '.'.join((module, name))
