@@ -13,6 +13,13 @@ class Selector(metaclass=abc.ABCMeta):
     """
     A Selector decides the implementation a given input to a feature should use
     """
+
+    def __init__(self, name: str):
+        self.name = name
+        """
+        A short recognizable human description of the purpose of this selector
+        """
+
     @abc.abstractmethod
     def select(self, value) -> str:
         """
@@ -26,14 +33,12 @@ class Selector(metaclass=abc.ABCMeta):
         """
         Returns an instance of the selector from the provided data
         """
-        pass
 
     @abc.abstractmethod
     def serialize_data(self, app) -> dict:
         """
         Serializes the configuration of the selector for serialization
         """
-        pass
 
 
 class Static(Selector):
@@ -41,7 +46,8 @@ class Static(Selector):
     Static Selectors return a single implementation based on the
     configured value.
     """
-    def __init__(self, value: str):
+    def __init__(self, name: str, value: str):
+        super().__init__(name)
         self.value = value
 
     def select(self, *args, **kwargs) -> str:
@@ -50,11 +56,13 @@ class Static(Selector):
     @classmethod
     def from_data(cls, app, configuration):
         return cls(
+            name=configuration['name'],
             value=configuration['value']
         )
 
     def serialize_data(self, app):
         return {
+            'name': self.name,
             'value': self.value,
         }
 
@@ -65,7 +73,8 @@ class Rollout(Selector):
     configured weightings.
     They are designed to gradually enable a new feature over time.
     """
-    def __init__(self, segment: Segment, weights: Weights):
+    def __init__(self, name: str, segment: Segment, weights: Weights):
+        super().__init__(name)
         self.segment = segment
         self.weights = weights
         self.population = list(weights.keys())
@@ -96,12 +105,14 @@ class Rollout(Selector):
     @classmethod
     def from_data(cls, app, configuration):
         return cls(
+            name=configuration['name'],
             segment=app.get_segment(configuration['segment']),
             weights=configuration['weights'],
         )
 
     def serialize_data(self, app):
         return {
+            'name': self.name,
             'segment': self.segment.name,
             'weights': self.weights,
         }
@@ -147,10 +158,12 @@ class Experiment(Selector):
     """
     def __init__(
             self,
+            name: str,
             segment: Segment,
             persister: ExperimentPersister,
             weights: Weights
     ):
+        super().__init__(name)
         self.segment = segment
         self.persister = persister
         self.population = list(weights.keys())
@@ -168,6 +181,7 @@ class Experiment(Selector):
     @classmethod
     def from_data(cls, app, configuration):
         return cls(
+            name=configuration['name'],
             segment=app.get_segment(configuration['segment']),
             persister=app.get_persister(configuration['persister']),
             weights=configuration['weights'],
@@ -175,6 +189,7 @@ class Experiment(Selector):
 
     def serialize_data(self, app):
         return {
+            'name': self.name,
             'segment': self.segment.name,
             'persister': app._name(self.persister),
             'weights': self.weights,

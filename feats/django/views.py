@@ -83,6 +83,9 @@ class StaticSelectorForm(forms.Form):
             widget=forms.HiddenInput,
             initial='static'
     )
+    name = forms.CharField(
+            required=True,
+    )
 
 
     def __init__(self, feature_handle, *args, **kwargs):
@@ -94,8 +97,10 @@ class StaticSelectorForm(forms.Form):
 
     def create_selector(self):
         return selector.Static.from_data(
-                self.feature_handle.app,
-                {'value': self.cleaned_data['implementation']}
+                self.feature_handle.app, {
+                    'value': self.cleaned_data['implementation'],
+                    'name': self.cleaned_data['name'],
+                }
         )
 
 
@@ -105,15 +110,18 @@ class RolloutSelectorForm(forms.Form):
             widget=forms.HiddenInput,
             initial='rollout'
     )
+    name = forms.CharField(
+            required=True,
+    )
 
     def __init__(self, feature_handle, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.feature_handle = feature_handle
         self.fields['segment'] = forms.ChoiceField(
-            choices=[(name, name) for name in feature_handle.feature.implementations.keys()]
+            choices=[(name, name) for name in feature_handle.valid_segments().keys()]
         )
         for name in feature_handle.feature.implementations.keys():
-            self.fields['weight-{}'.format(name)] = forms.IntegerField(
+            self.fields['weights[{}]'.format(name)] = forms.IntegerField(
                 required=True,
                 min_value=0,
                 initial=0,
@@ -122,12 +130,14 @@ class RolloutSelectorForm(forms.Form):
 
     def create_selector(self):
         segment = self.cleaned_data['segment']
+        name = self.cleaned_data['name']
         weights = {}
-        for name in self.feature_handle.feature.implementation.keys():
+        for name in self.feature_handle.feature.implementations.keys():
             weight = self.cleaned_data['weights[{}]'.format(name)]
             weights[name] = weight
         return selector.Rollout.from_data(
             self.feature_handle.app, {
+            'name': name,
             'weights': weights,
             'segment': segment
         })
@@ -138,6 +148,9 @@ class ExperimentSelectorForm(forms.Form):
         required=True,
         widget=forms.HiddenInput,
         initial='experiment'
+    )
+    name = forms.CharField(
+            required=True,
     )
 
     def __init__(self, feature_handle, *args, **kwargs):
@@ -151,12 +164,14 @@ class ExperimentSelectorForm(forms.Form):
 
     def create_selector(self):
         segment = self.cleaned_data['segment']
+        name = self.cleaned_data['name']
         weights = {}
-        for name in self.feature_handle.feature.implementation.keys():
+        for name in self.feature_handle.feature.implementations.keys():
             weight = self.cleaned_data['weights[{}]'.format(name)]
             weights[name] = weight
         return selector.Experiment.from_data(
             self.feature_handle.app, {
+            'name': name,
             'persister': "# TODO:", # Needs App support for registering persisters
             'weights': weights,
             'segment': segment
