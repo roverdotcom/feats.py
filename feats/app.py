@@ -1,4 +1,5 @@
 from typing import Dict
+import copy
 
 from .storage import Storage
 from .errors import UnknownSelectorName, UnknownSegmentName
@@ -41,13 +42,13 @@ class FeatureHandle:
         return self.feature.implementations[impl_name].fn(*args)
 
     def set_state(self, new_state: FeatureState):
-        serialized_state = new_state.serialize(self.app)
+        serialized_state = copy.deepcopy(new_state.serialize(self.app))
         self.app.storage[self.name].append(serialized_state)
         
     def get_current_state(self) -> FeatureState:
         states = self.app.storage[self.name]
         try:
-            state_data = states[-1]
+            state_data = copy.deepcopy(states[-1])
         except IndexError:
             return None
 
