@@ -60,17 +60,41 @@ class FeatureSegmentForm(forms.Form):
             required=True
         )
 
-def selector_mapping_formset(segments, feature_handle):
-    pass
+def selector_mapping_formset(segments, state, data=None):
+    class FormsetForm(SelectorMappingForm):
+        def __init__(self, *args, **kwargs):
+            super().__init__(segments, state.selectors, *args, **kwargs) 
+    return forms.formset_factory(FormsetForm)(data=data, prefix='selector-mapping')
 
 
 class SelectorMappingForm(forms.Form):
     """
-    Maps a selector to the result of segmentation
+    Maps a selector to the result of segmentation.
     """
-    def __init__(self, segments, selector):
-        segments = []
+    def __init__(self, segments, selectors, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.segments = segments
+        self.fields['selector'] = forms.ChoiceField(
+                choices=[
+                    (selector.name, selector.name)
+                    for selector in selectors
+                ],
+                required=True
+        )
+        for segment in segments:
+            self.fields['segment[{}]'.format(segment.name)] = forms.CharField(required=True)
 
+
+    def get_mapping_entry(self):
+        """
+        Converts this form's cleaned_data to a k/v tuple
+        mapping a segment to a selector
+        """
+        selector_name = self.cleaned_data['selector']
+        segment_values = []
+        for segment in self.segments:
+            segment_values.append(self.cleaned_data['segment[{}]'.format(segment.name)])
+        return tuple(segment_values), selector_name
 
 
 class ChangeSegmentation(TemplateView):
@@ -83,6 +107,9 @@ class ChangeSegmentation(TemplateView):
         This does not save any data to the database.
     The next form submits through a POST to this url with the segments and mappings.
         This creates a new feature state and persists it.
+
+    We update both segmentation and mapping in the same POST, as the alternative
+    is to delete all mappings when segmentation is updated.
     """
     template_name = 'feats/change_segmentation.html'
 
@@ -90,15 +117,17 @@ class ChangeSegmentation(TemplateView):
     def feature(self):
         return app_config.feats_app.features[self.args[0]]
 
-    def get_segment_formset(self, feature):
-        return feature_segment_formset(feature)(self.request.GET)
+    def get_state(self, feature):
+        state = feature
 
-    def get_mapping_formset(self, feature, segments):
-        if request.method == 'POST':
-            return selector_mapping_formset(feature, segments)(self.request.POST)
-        return None
+    def get_segment_formset(self, feature, data):
+        return feature_segment_formset(feature, data=data)
 
-    def validate_and_get_segments(self, segment_names):
+    def get_mapping_formset(self, segments, state, data):
+        return selector_mapping_formset(segments, state, data=data)
+
+    def validate_and_get_segments(self, segment_formset):
+        segment_names = [form.cleaned_data['segment'] for form in segment_formset]
         segments = [
             app_config.feats_app.segments[segment_name]
             for segment_name in segment_names
@@ -108,23 +137,69 @@ class ChangeSegmentation(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         feature = self.feature
-        segment_formset = feature_segment_formset(feature)
-        mapping_formset = None
-        if segment_formset.is_bound and segment_formset.is_valid():
-            segments = validate_and_get_segments(formset.cleaned_data.values())
-            mapping_formset = self.get_mapping_formset(feature, segments)
-            context['formset'] = mapping_formset
+        state = feature.get_current_state()
+        if state is None:
+            state = FeatureState(
+                    segments=[],
+                    selectors=[],
+                    selector_mapping={},
+                    created_by=self.request.user.username
+            )
+        segment_formset, mapping_formset = self.get_formsets(feature, state, self.request.GET)
+        if mapping_formset is None:
+            context['form_method'] = 'GET'
+            context['formsets'] = [segment_formset]
         else:
-            context['formset'] = segment_formset
-
+            context['form_method'] = 'POST'
+            context['formsets'] = [segment_formset, mapping_formset]
         context['feature'] = feature
         return context
 
-    def get(self, request, *args, **kwargs):
-        context['formset'] =
+    def get_formsets(self, feature, state, data):
+        if not data:
+            data = None
+        segment_formset = self.get_segment_formset(feature, data)
+        mapping_formset = None
+        if segment_formset.is_bound and segment_formset.is_valid():
+            segments = self.validate_and_get_segments(segment_formset)
+            data = {
+                k:v for k, v in data.items() if not k.startswith('segment')
+            }
+            if not data:
+                data = None
+            mapping_formset = self.get_mapping_formset(segments, state, data)
+
+        return (segment_formset, mapping_formset)
 
     def post(self, request, *args, **kwargs):
+        feature = self.feature
+        state = feature.get_current_state()
+        if state is None:
+            state = FeatureState(
+                    segments=[],
+                    selectors=[],
+                    selector_mapping={},
+                    created_by=self.request.user.username
+            )
+        segment_formset, mapping_formset = self.get_formsets(feature, state, request.POST)
+        if mapping_formset is None:
+            return HttpResponseBadRequest()
 
+        if mapping_formset.is_valid():
+            segments = self.validate_and_get_segments(segment_formset)
+            selector_mapping = dict(form.get_mapping_entry() for form in mapping_formset)
+            state = FeatureState(
+                    segments=segments,
+                    selectors=state.selectors,
+                    selector_mapping=selector_mapping,
+                    created_by=self.request.user.username
+            )
+            self.feature.set_state(state)
+            return HttpResponseRedirect(
+                reverse('feats:detail', args=self.args)
+            )
+
+        return HttpResponseBadRequest()
 
 
 class SelectorForm(forms.Form):
