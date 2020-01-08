@@ -1,3 +1,4 @@
+import inspect
 from typing import Dict
 
 from .storage import Storage
@@ -107,6 +108,9 @@ class App:
         # configured to return NewImplementation
         MyFeature.create()
         """
+        if not inspect.isclass(cls):
+            raise ValueError("Invalid feature object - expected class")
+
         obj = cls()
         implementations, annotations = obj_to_implementations(obj)
         definition = Definition(obj.__doc__, implementations, annotations)
@@ -144,6 +148,10 @@ class App:
         if not callable(fn):
             raise ValueError("Boolean feature must be a function")
 
+        return_type = inspect.signature(fn).return_annotation
+        if return_type != bool:
+            raise ValueError(f"Expected bool return type - got {return_type}")
+
         fn = self.default(fn)
         implementations, annotations = fn_to_implementations(fn)
         definition = Definition(fn.__doc__, implementations, annotations)
@@ -169,6 +177,8 @@ class App:
             def floats(self, f: float) -> str:
                 return str(f)
         """
+        if not inspect.isclass(cls):
+            raise ValueError("Invalid segment object - expected class")
 
         obj = cls()
         implementations, annotations = obj_to_implementations(obj)

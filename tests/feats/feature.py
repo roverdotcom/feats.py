@@ -202,6 +202,9 @@ def ValidBooleanFeature() -> bool:
 def InvalidBooleanFeatureNoReturnType():
     return True
 
+def InvalidBooleanFeatureBadReturnType() -> str:
+    return "True"
+
 
 def InvalidBooleanFeatureNoInputType(arg) -> bool:
     return True
@@ -235,6 +238,10 @@ class AppTests(TestCase):
                 self.assertIsNotNone(handle)
                 self.assertEqual(handle.create(), 'foo')
 
+    def test_feature_must_be_class(self):
+        with self.assertRaises(ValueError):
+            self.app.feature(ValidBooleanFeature)
+
     def test_valid_segments(self):
         for definition in self._definition_test(ValidSegments):
             with self.subTest(definition):
@@ -256,6 +263,10 @@ class AppTests(TestCase):
             with self.subTest(definition), self.assertRaises(ValueError):
                 self.app.segment(definition)
 
+    def test_segments_must_be_class(self):
+        with self.assertRaises(ValueError):
+            self.app.segment(ValidBooleanFeature)
+
     def test_valid_boolean_feature(self):
         fn = ValidBooleanFeature
         handle = self.app.boolean(fn)
@@ -274,6 +285,7 @@ class AppTests(TestCase):
         fns = [
             InvalidBooleanFeatureNoReturnType,
             InvalidBooleanFeatureNoInputType,
+            InvalidBooleanFeatureBadReturnType,
             InvalidBooleanFeatureAsClass,
         ]
         for fn in fns:
