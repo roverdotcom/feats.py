@@ -33,34 +33,18 @@ class Definition:
     """
     """
 
-    def __init__(self, obj):
-        self.description = obj.__doc__
-        self.implementations: Dict[str, Implementation] = {}
-        self.annotations = defaultdict(list)
+    def __init__(
+            self,
+            description: str,
+            implementations: Dict[str, Implementation],
+            annotations: Dict[str, list]):
 
-        if callable(obj):
-            self._build_for_fn(obj)
-        else:
-            self._build_for_cls(obj)
-
-        if len(self.implementations) == 0:
+        if len(implementations) == 0:
             # TODO: Describe what an implementation needs
             raise ValueError(
                 "Definition did not contain at least one implementation"
             )
 
-    def _build_for_cls(self, cls):
-        for key in dir(cls):
-            value = getattr(cls, key)
-            if key.startswith('_') or not callable(value):
-                continue
-
-            self._build_for_fn(value)
-
-    def _build_for_fn(self, fn):
-        impl = Implementation(fn)
-        self.implementations[impl.name] = impl
-
-        if hasattr(fn, '_feats_annotations_'):
-            for annotation in fn._feats_annotations_:
-                self.annotations[annotation].append(impl)
+        self.description = description
+        self.implementations = implementations
+        self.annotations = annotations

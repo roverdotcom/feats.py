@@ -6,6 +6,8 @@ from .feature import default
 from .meta import Definition
 from .segment import Segment
 from .state import FeatureState
+from .utils import fn_to_implementations
+from .utils import obj_to_implementations
 
 
 class FeatureHandle:
@@ -105,7 +107,9 @@ class App:
         # configured to return NewImplementation
         MyFeature.create()
         """
-        definition = Definition(cls())
+        obj = cls()
+        implementations, annotations = obj_to_implementations(obj)
+        definition = Definition(obj.__doc__, implementations, annotations)
         feature = Feature(definition)
         name = self._name(cls)
         handle = FeatureHandle(self, name, feature)
@@ -141,7 +145,8 @@ class App:
             raise ValueError("Boolean feature must be a function")
 
         fn = self.default(fn)
-        definition = Definition(fn)
+        implementations, annotations = fn_to_implementations(fn)
+        definition = Definition(fn.__doc__, implementations, annotations)
         feature = Feature(definition)
         name = fn.__name__
         handle = FeatureHandle(self, name, feature)
@@ -165,7 +170,9 @@ class App:
                 return str(f)
         """
 
-        definition = Definition(cls())
+        obj = cls()
+        implementations, annotations = obj_to_implementations(obj)
+        definition = Definition(obj.__doc__, implementations, annotations)
         seg = Segment(definition)
         name = self._name(cls)
         self.segments[name] = seg
