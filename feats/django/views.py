@@ -2,6 +2,7 @@ from django import forms
 from django.apps import apps
 from django.http.response import HttpResponseRedirect
 from django.http.response import HttpResponseBadRequest
+from django.http import Http404
 from django.urls import reverse
 from django.views.generic import base
 
@@ -10,11 +11,13 @@ from feats.state import FeatureState
 
 app_config = apps.get_app_config('feats')
 
+
 class TemplateView(base.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['features'] = app_config.feats_app.features.values()
         return context
+
 
 class Index(TemplateView):
     template_name = 'feats/index.html'
@@ -31,7 +34,7 @@ class Detail(TemplateView):
         context = super().get_context_data(**kwargs)
         feature = self.feature
         context['feature'] = feature
-        context['state'] = self.feature.get_current_state()
+        context['state'] = feature.get_current_state()
         return context
 
 
@@ -44,13 +47,16 @@ def feature_segment_formset(feature_handle, *fn_args, **fn_kwargs):
 
 class FeatureSegmentForm(forms.Form):
     """
-    Maps a Segment to a feature. Intended to be used in a Formset 
+    Maps a Segment to a feature. Intended to be used in a Formset
     """
 
     def __init__(self, feature_handle, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['segment'] = forms.ChoiceField(
-            choices=[(name, name) for name, segment in feature_handle.valid_segments().items()],
+            choices=[
+                (name, name)
+                for name, segment in feature_handle.valid_segments().items()
+            ],
             required=True
         )
 
@@ -77,49 +83,43 @@ class ChangeSegmentation(TemplateView):
         return context
 
 
-class StaticSelectorForm(forms.Form):
-    _type = forms.CharField(
+class SelectorForm(forms.Form):
+    name = forms.CharField(required=True)
+
+    def __init__(self, _type: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['_type'] = forms.CharField(
             required=True,
             widget=forms.HiddenInput,
-            initial='static'
-    )
-    name = forms.CharField(
-            required=True,
-    )
+            initial=_type
+        )
 
 
+class StaticSelectorForm(SelectorForm):
     def __init__(self, feature_handle, *args, **kwargs):
-        super().__init__(*args, **kwargs)                
+        super().__init__('static', *args, **kwargs)
         self.feature_handle = feature_handle
         self.fields['implementation'] = forms.ChoiceField(
-            choices=[(name, name) for name in feature_handle.feature.implementations.keys()]
+            choices=[
+                (name, name)
+                for name in feature_handle.feature.implementations.keys()
+            ],
+            required=True
         )
 
     def create_selector(self):
         return selector.Static.from_data(
-                self.feature_handle.app, {
-                    'value': self.cleaned_data['implementation'],
-                    'name': self.cleaned_data['name'],
-                }
+            self.feature_handle.app, {
+                'value': self.cleaned_data['implementation'],
+                'name': self.cleaned_data['name'],
+            }
         )
 
 
-class RolloutSelectorForm(forms.Form):
-    _type = forms.CharField(
-            required=True,
-            widget=forms.HiddenInput,
-            initial='rollout'
-    )
-    name = forms.CharField(
-            required=True,
-    )
-
-    def __init__(self, feature_handle, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class WeightedSelectorForm(SelectorForm):
+    def __init__(self, feature_handle, _type, *args, **kwargs):
+        super().__init__(_type, *args, **kwargs)
         self.feature_handle = feature_handle
-        self.fields['segment'] = forms.ChoiceField(
-            choices=[(name, name) for name in feature_handle.valid_segments().keys()]
-        )
         for name in feature_handle.feature.implementations.keys():
             self.fields['weights[{}]'.format(name)] = forms.IntegerField(
                 required=True,
@@ -127,55 +127,62 @@ class RolloutSelectorForm(forms.Form):
                 initial=0,
             )
 
-
-    def create_selector(self):
-        segment = self.cleaned_data['segment']
-        name = self.cleaned_data['name']
+    def get_weights(self):
         weights = {}
         for name in self.feature_handle.feature.implementations.keys():
             weight = self.cleaned_data['weights[{}]'.format(name)]
             weights[name] = weight
+        return weights
+
+
+class RolloutSelectorForm(WeightedSelectorForm):
+    def __init__(self, feature_handle, *args, **kwargs):
+        super().__init__(feature_handle, 'rollout', *args, **kwargs)
+        self.fields['segment'] = forms.ChoiceField(
+            choices=[
+                (name, name) for name in feature_handle.valid_segments().keys()
+            ],
+            required=True
+        )
+
+    def create_selector(self):
+        segment = self.cleaned_data['segment']
+        name = self.cleaned_data['name']
+        weights = self.get_weights()
+
         return selector.Rollout.from_data(
             self.feature_handle.app, {
-            'name': name,
-            'weights': weights,
-            'segment': segment
-        })
+                'name': name,
+                'weights': weights,
+                'segment': segment
+            }
+        )
 
 
-class ExperimentSelectorForm(forms.Form):
-    _type = forms.CharField(
-        required=True,
-        widget=forms.HiddenInput,
-        initial='experiment'
-    )
-    name = forms.CharField(
-            required=True,
-    )
-
+class ExperimentSelectorForm(WeightedSelectorForm):
     def __init__(self, feature_handle, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name in feature_handle.feature.implementations.keys():
-            self.fields['weights[{}]'.format(name)] = forms.IntegerField(
-                required=True,
-                min_value=0,
-                initial=0,
-            )
+        super().__init__(feature_handle, 'experiment', *args, **kwargs)
+        self.fields['segment'] = forms.ChoiceField(
+            choices=[
+                (name, name) for name in feature_handle.valid_segments().keys()
+            ],
+            required=True
+        )
 
     def create_selector(self):
         segment = self.cleaned_data['segment']
         name = self.cleaned_data['name']
-        weights = {}
-        for name in self.feature_handle.feature.implementations.keys():
-            weight = self.cleaned_data['weights[{}]'.format(name)]
-            weights[name] = weight
+        weights = self.get_weights()
+
         return selector.Experiment.from_data(
             self.feature_handle.app, {
-            'name': name,
-            'persister': "# TODO:", # Needs App support for registering persisters
-            'weights': weights,
-            'segment': segment
-        })
+                'name': name,
+                # Needs App support for registering persisters
+                'persister': "# TODO:",
+                'weights': weights,
+                'segment': segment
+            }
+        )
 
 
 class AddSelector(TemplateView):
@@ -206,7 +213,11 @@ class AddSelector(TemplateView):
 
         init_forms = {}
         for key, form in self.forms.items():
-            init_forms[key] = form(feature, data=data.get(key), auto_id='id_{}_%s'.format(key))
+            init_forms[key] = form(
+                feature,
+                data=data.get(key),
+                auto_id='id_{}_%s'.format(key)
+            )
         return init_forms
 
     def get_context_data(self, **kwargs):
@@ -232,17 +243,17 @@ class AddSelector(TemplateView):
             state = feature.get_current_state()
             if state is None:
                 state = FeatureState(
-                        segments=[],
-                        selectors=[selector],
-                        selector_mapping={},
-                        created_by=self.request.user.username
+                    segments=[],
+                    selectors=[selector],
+                    selector_mapping={},
+                    created_by=self.request.user.username
                 )
             else:
                 state = FeatureState(
-                        segments=state.segments,
-                        selectors=state.selectors + [selector],
-                        selector_mapping=state.selector_mapping,
-                        created_by=self.request.user.username
+                    segments=state.segments,
+                    selectors=state.selectors + [selector],
+                    selector_mapping=state.selector_mapping,
+                    created_by=self.request.user.username
                 )
             self.feature.set_state(state)
             return HttpResponseRedirect(
@@ -260,11 +271,19 @@ class ChangeSelector(TemplateView):
         return app_config.feats_app.features[self.args[0]]
 
     @property
-    def selector(self):
-        return self.feature.selectors[int(self.args[1])]
+    def state(self):
+        state = self.feature.get_current_state()
+        if state is None:
+            raise Http404()
+        return state
+
+    @property
+    def form(self):
+        return self.state.selectors[int(self.args[1])]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['feature'] = self.feature
+        context['form'] = self.form
         context['selector'] = self.selector
         return context

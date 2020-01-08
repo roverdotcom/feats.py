@@ -1,9 +1,10 @@
 {% extends "feats/_template.html" %}
 {% block main %}
 {% if formset %}
-<form>
- 	{{formset}}
-       <input type="submit" value="Submit"/>
+<form method="post" action="">
+    {% csrf_token %}
+    {{formset}}
+    <input type="submit" value="Submit"/>
 </form>
 {% else %}
 <p>

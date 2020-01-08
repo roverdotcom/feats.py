@@ -19,17 +19,10 @@
 				<a class="navbar-brand" href="{% url "feats:index" %}">Feats</a>
 				{% if feature %}
 				<span class="navbar-brand">{{feature.name}}</span>
+                <span/> {% comment %} navbar is a flexbox, this span centers the feature name {% endcomment %}
 				{% endif %}
-				<form class="form-inline" method="get" action="{% url "feats:index" %}">
-					<input class="form-control" name="feature" type="search" list="features-datalist" placeholder="Search"/>
-				</form>
 			</nav>
-			<datalist id="features-datalist">
-				{% for feature in features %}
-				<option value="{{feature.name}}"/>
-				{% endfor %}
-			</datalist>
-			{% endblock %}
+            {% endblock %}
 		</header>
 		<div class="row mt-1">
 			<aside class="col-2 flex-column">

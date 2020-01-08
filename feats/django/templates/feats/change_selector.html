@@ -28,11 +28,11 @@
 <section>
     <h2>Configuration</h2>
     {% if selector.type == "static" %}
-    {% include "feats/selector/static/change_form.html" selector %}
+    {% include "feats/selector/static/change_form.html" with form=form %}
     {% elif selector.type == "rollout" %}
-    {% include "feats/selector/rollout/change_form.html" selector %}
+    {% include "feats/selector/rollout/change_form.html" with form=form %}
     {% elif selector.type == "experiment" %}
-    {% include "feats/selector/experiment/change_form.html" selector %}
+    {% include "feats/selector/experiment/change_form.html" with form=form %}
     {% else %}
     Unknown Selector Type "{{selector.type}}"
     {% endif %}
