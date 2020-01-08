@@ -38,11 +38,11 @@ class Detail(TemplateView):
         return context
 
 
-def feature_segment_formset(feature_handle, *fn_args, **fn_kwargs):
+def feature_segment_formset(feature_handle, data=None):
     class FormsetForm(FeatureSegmentForm):
         def __init__(self, *args, **kwargs):
             super().__init__(feature_handle, *args, **kwargs)
-    return forms.formset_factory(FormsetForm, *fn_args, **fn_kwargs)
+    return forms.formset_factory(FormsetForm)(data=data, prefix='segment')
 
 
 class FeatureSegmentForm(forms.Form):
@@ -60,27 +60,71 @@ class FeatureSegmentForm(forms.Form):
             required=True
         )
 
+def selector_mapping_formset(segments, feature_handle):
+    pass
 
-class SelectorSegmentForm(forms.Form):
+
+class SelectorMappingForm(forms.Form):
     """
     Maps a selector to the result of segmentation
     """
-    segment = forms.CharField()
+    def __init__(self, segments, selector):
+        segments = []
+
 
 
 class ChangeSegmentation(TemplateView):
+    """
+    Changes how a Feature is Segmented and how selectors map to those segments.
+
+    Updating segmentation resets any selector mappings, so this form is done in
+    two steps.
+    The first form submits through a GET to this url with the segments.
+        This does not save any data to the database.
+    The next form submits through a POST to this url with the segments and mappings.
+        This creates a new feature state and persists it.
+    """
     template_name = 'feats/change_segmentation.html'
 
     @property
     def feature(self):
         return app_config.feats_app.features[self.args[0]]
 
+    def get_segment_formset(self, feature):
+        return feature_segment_formset(feature)(self.request.GET)
+
+    def get_mapping_formset(self, feature, segments):
+        if request.method == 'POST':
+            return selector_mapping_formset(feature, segments)(self.request.POST)
+        return None
+
+    def validate_and_get_segments(self, segment_names):
+        segments = [
+            app_config.feats_app.segments[segment_name]
+            for segment_name in segment_names
+        ]
+        return segments
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         feature = self.feature
+        segment_formset = feature_segment_formset(feature)
+        mapping_formset = None
+        if segment_formset.is_bound and segment_formset.is_valid():
+            segments = validate_and_get_segments(formset.cleaned_data.values())
+            mapping_formset = self.get_mapping_formset(feature, segments)
+            context['formset'] = mapping_formset
+        else:
+            context['formset'] = segment_formset
+
         context['feature'] = feature
-        context['formset'] = feature_segment_formset(feature)
         return context
+
+    def get(self, request, *args, **kwargs):
+        context['formset'] =
+
+    def post(self, request, *args, **kwargs):
+
 
 
 class SelectorForm(forms.Form):
