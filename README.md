@@ -1,3 +1,9 @@
+# COMING SOON!
+
+Feats.py is still actively being developed and as such, is **not** yet ready for
+real world applications. Until then, please feel free to review this
+documentation and keep an eye on this repo for an initial release!
+
 # feats.py (WIP)
 Feats.py is a feature flag library for Python applications. We built it
 based on our learnings from using the [Gargoyle](https://github.com/adamchainz/gargoyle)
