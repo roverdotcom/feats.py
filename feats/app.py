@@ -1,3 +1,4 @@
+import inspect
 from typing import Dict
 
 from .storage import Storage
@@ -105,7 +106,11 @@ class App:
         # configured to return NewImplementation
         MyFeature.create()
         """
-        definition = Definition(cls())
+        if not inspect.isclass(cls):
+            raise ValueError("Invalid feature object - expected class")
+
+        obj = cls()
+        definition = Definition.from_object(obj)
         feature = Feature(definition)
         name = self._name(cls)
         handle = FeatureHandle(self, name, feature)
@@ -119,6 +124,39 @@ class App:
         Only valid for functions inside of a class annotated with @feature
         """
         return default(fn)
+
+    def boolean(self, fn):
+        """
+        Similar to `feature` but operates on a function. Initializes the
+        wrapped function and returns a handle to the registered boolean
+        feature.
+
+        The handle has a method, create, which can be invoked to obtain an
+        implementation to use.
+
+        Example:
+        @my_app.boolean
+        def MyFeature() -> bool:
+            return True
+
+        This function will be automatically annotated as the default
+        implementation.
+        """
+        if not callable(fn):
+            raise ValueError("Boolean feature must be a function")
+
+        return_type = inspect.signature(fn).return_annotation
+        if return_type != bool:
+            raise ValueError(f"Expected bool return type - got {return_type}")
+
+        fn = self.default(fn)
+        definition = Definition.from_function(fn)
+        feature = Feature(definition)
+        name = fn.__name__
+        handle = FeatureHandle(self, name, feature)
+        self.features[name] = handle
+
+        return handle
 
     def segment(self, cls):
         """
@@ -135,8 +173,11 @@ class App:
             def floats(self, f: float) -> str:
                 return str(f)
         """
+        if not inspect.isclass(cls):
+            raise ValueError("Invalid segment object - expected class")
 
-        definition = Definition(cls())
+        obj = cls()
+        definition = Definition.from_object(obj)
         seg = Segment(definition)
         name = self._name(cls)
         self.segments[name] = seg

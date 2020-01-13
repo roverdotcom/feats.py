@@ -189,6 +189,27 @@ class InvalidSegments:
             return 0
 
 
+class InvalidBooleanFeatureAsClass:
+    @feats.default
+    def foo(self) -> bool:
+        return True
+
+
+def ValidBooleanFeature() -> bool:
+    return True
+
+
+def InvalidBooleanFeatureNoReturnType():
+    return True
+
+def InvalidBooleanFeatureBadReturnType() -> str:
+    return "True"
+
+
+def InvalidBooleanFeatureNoInputType(arg) -> bool:
+    return True
+
+
 class AppTests(TestCase):
     def setUp(self):
         super().setUp()
@@ -217,6 +238,10 @@ class AppTests(TestCase):
                 self.assertIsNotNone(handle)
                 self.assertEqual(handle.create(), 'foo')
 
+    def test_feature_must_be_class(self):
+        with self.assertRaises(ValueError):
+            self.app.feature(ValidBooleanFeature)
+
     def test_valid_segments(self):
         for definition in self._definition_test(ValidSegments):
             with self.subTest(definition):
@@ -237,3 +262,32 @@ class AppTests(TestCase):
         for definition in self._definition_test(InvalidSegments):
             with self.subTest(definition), self.assertRaises(ValueError):
                 self.app.segment(definition)
+
+    def test_segments_must_be_class(self):
+        with self.assertRaises(ValueError):
+            self.app.segment(ValidBooleanFeature)
+
+    def test_valid_boolean_feature(self):
+        fn = ValidBooleanFeature
+        handle = self.app.boolean(fn)
+        self.assertIsNotNone(handle)
+        self.assertEqual(self.app.features[fn.__name__], handle)
+
+        with self.subTest("default annotation is set automatically"):
+            default = handle.feature.definition.annotations["default"]
+            self.assertEqual(len(default), 1)
+            self.assertEqual(default[0].fn, fn)
+
+        with self.subTest("handle"):
+            self.assertEqual(handle.create(), True)
+
+    def test_invalid_boolean_features(self):
+        fns = [
+            InvalidBooleanFeatureNoReturnType,
+            InvalidBooleanFeatureNoInputType,
+            InvalidBooleanFeatureBadReturnType,
+            InvalidBooleanFeatureAsClass,
+        ]
+        for fn in fns:
+            with self.subTest(fn), self.assertRaises(ValueError):
+                self.app.boolean(fn)

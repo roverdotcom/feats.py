@@ -29,10 +29,12 @@ class SegmentTests(TestCase):
 
     def test_ambiguous(self):
         with self.assertRaises(ValueError):
-            Segment(Definition(AmbiguousSegment()))
+            obj = AmbiguousSegment()
+            Segment(Definition.from_object(obj))
 
     def test_one_impl(self):
-        segment = Segment(Definition(IntSegment()))
+        obj = IntSegment()
+        segment = Segment(Definition.from_object(obj))
 
         with self.subTest("valid input"):
             self.assertEqual("int", segment(1))
@@ -41,7 +43,8 @@ class SegmentTests(TestCase):
             segment("hello")
 
     def test_two_impl(self):
-        segment = Segment(Definition(StringIntSegment()))
+        obj = StringIntSegment()
+        segment = Segment(Definition.from_object(obj))
 
         with self.subTest("valid input str"):
             self.assertEqual("string", segment("hi"))
