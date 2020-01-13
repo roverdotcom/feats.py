@@ -33,12 +33,12 @@
     {% if feature.feature.input_types %}
 	<section>
 		<h3>Segmentation</h3>
-		{% if state.segments %}
-		Segmentation: {{ state.segments|join:',' }}
+		{% if segment_names %}
+		{{ segment_names|join:',' }}
 		{% else %}
 		No Segmentation Specified
 		{% endif %}
-		<a class="small" href="{% url 'feats:update-segmentation' feature.name %}">✎</a>
+		<a href="{% url 'feats:update-segmentation' feature.name %}">✎</a>
 	</section>
 	<section>
 		<h3>Selectors</h3>
@@ -46,7 +46,7 @@
 		<div>
 		{% comment %} TODO: Selector description {% endcomment %}
 		{{ selector.name }}
-		<a class="small" href="{% url 'feats:update-selector' feature.name forloop.counter0 %}">Edit</a>
+		<a href="{% url 'feats:update-selector' feature.name forloop.counter0 %}">Edit</a>
 		</div>
 		{% empty %}
 		<p>No selectors configured. The default will always be used.</p>

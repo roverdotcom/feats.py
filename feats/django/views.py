@@ -33,8 +33,11 @@ class Detail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         feature = self.feature
+        state = feature.get_current_state()
         context['feature'] = feature
-        context['state'] = feature.get_current_state()
+        context['state'] = state
+        if state:
+            context['segment_names'] = [segment.name for segment in state.segments]
         return context
 
 
@@ -73,11 +76,12 @@ class SelectorMappingForm(forms.Form):
     """
     def __init__(self, segments, selectors, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.selectors = selectors
         self.segments = segments
         self.fields['selector'] = forms.ChoiceField(
                 choices=[
-                    (selector.name, selector.name)
-                    for selector in selectors
+                    (i, selector.name)
+                    for i, selector in enumerate(selectors)
                 ],
                 required=True
         )
@@ -90,11 +94,11 @@ class SelectorMappingForm(forms.Form):
         Converts this form's cleaned_data to a k/v tuple
         mapping a segment to a selector
         """
-        selector_name = self.cleaned_data['selector']
+        selector_index = int(self.cleaned_data['selector'])
         segment_values = []
         for segment in self.segments:
             segment_values.append(self.cleaned_data['segment[{}]'.format(segment.name)])
-        return tuple(segment_values), selector_name
+        return tuple(segment_values), self.selectors[selector_index]
 
 
 class ChangeSegmentation(TemplateView):
