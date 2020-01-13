@@ -20,6 +20,21 @@ class Selector(metaclass=abc.ABCMeta):
         value: The object that will be given to the feature.
         """
 
+    @classmethod
+    @abc.abstractmethod
+    def from_data(cls, app, configuration):
+        """
+        Returns an instance of the selector from the provided data
+        """
+        pass
+
+    @abc.abstractmethod
+    def serialize_data(self, app) -> dict:
+        """
+        Serializes the configuration of the selector for serialization
+        """
+        pass
+
 
 class Static(Selector):
     """
@@ -31,6 +46,17 @@ class Static(Selector):
 
     def select(self, *args, **kwargs) -> str:
         return self.value
+
+    @classmethod
+    def from_data(cls, app, configuration):
+        return cls(
+            value=configuration['value']
+        )
+
+    def serialize_data(self, app):
+        return {
+            'value': self.value,
+        }
 
 
 class Rollout(Selector):
@@ -66,6 +92,19 @@ class Rollout(Selector):
         hash = int(self._hex_hash(key), 16)
         bucket = hash % self.modulo
         return self.population[bisect(self.cum_weights, bucket)]
+
+    @classmethod
+    def from_data(cls, app, configuration):
+        return cls(
+            segment=app.get_segment(configuration['segment']),
+            weights=configuration['weights'],
+        )
+
+    def serialize_data(self, app):
+        return {
+            'segment': self.segment.name,
+            'weights': self.weights,
+        }
 
 
 class ExperimentPersister(metaclass=abc.ABCMeta):
@@ -125,3 +164,18 @@ class Experiment(Selector):
 
         choice = choices(self.population, self.weights)[0]
         return self.persister.persist_test_group(key, choice)
+
+    @classmethod
+    def from_data(cls, app, configuration):
+        return cls(
+            segment=app.get_segment(configuration['segment']),
+            persister=app.get_persister(configuration['persister']),
+            weights=configuration['weights'],
+        )
+
+    def serialize_data(self, app):
+        return {
+            'segment': self.segment.name,
+            'persister': app._name(self.persister),
+            'weights': self.weights,
+        }

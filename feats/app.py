@@ -2,10 +2,12 @@ import inspect
 from typing import Dict
 
 from .storage import Storage
+from .errors import UnknownSelectorName, UnknownSegmentName
 from .feature import Feature
 from .feature import default
 from .meta import Definition
 from .segment import Segment
+from .selector import Experiment, Rollout, Selector, Static
 from .state import FeatureState
 
 
@@ -21,7 +23,8 @@ class FeatureHandle:
         """
         states = self.app.storage[self.name]
         try:
-            state = states[-1]
+            state_data = states[-1]
+            state = FeatureState.deserialize(self.app, state_data)
             name = state.select_implementation(*args)
         except IndexError:
             name = None
@@ -70,18 +73,46 @@ class App:
         """
         self.segments: Dict[str, Segment] = {}
         self.features: Dict[str, FeatureHandle] = {}
+        self.selectors: Dict[str, Selector] = {}
         self.storage = storage
+
+        for cls in [Experiment, Rollout, Static]:
+            self.register_selector(cls)
 
     def _name(self, cls):
         """
         Constructs the fully qualified name of the given class.
         This includes the module path, if any, and the class's qualified name.
         """
-        name = cls.__qualname__
+        if hasattr(cls, '__qualname__'):
+            name = cls.__qualname__
+        else:
+            name = cls.__class__.__qualname__
         module = getattr(cls, '__module__', None)
         if module:
             name = '.'.join((module, name))
         return name
+
+    def register_selector(self, cls):
+        """
+        A method for registering Selectors by module name with the app for
+        serializing/deserializing
+        """
+        self.selectors[self._name(cls)] = cls
+
+    def get_selector(self, class_name):
+        if class_name not in self.selectors:
+            raise UnknownSelectorName(class_name)
+        return self.selectors[class_name]
+
+    def get_segment(self, segment_name):
+        """
+        Fetches the segment from our application related to the fully qualified name
+        """
+        segment = self.segments.get(segment_name)
+        if segment is None:
+            raise UnknownSegmentName(segment_name)
+        return segment
 
     def feature(self, cls):
         """
@@ -177,12 +208,13 @@ class App:
             raise ValueError("Invalid segment object - expected class")
 
         obj = cls()
-        definition = Definition.from_object(obj)
-        seg = Segment(definition)
         name = self._name(cls)
+        definition = Definition.from_object(obj)
+        seg = Segment(name, definition)
         self.segments[name] = seg
         return seg
 
     def configure_feature(self, feature: Feature, state: FeatureState):
         # TODO: Validate state against segments?
-        self.storage[feature].append(state)
+        serialized_state = state.serialize(self)
+        self.storage[feature].append(serialized_state)

@@ -1,6 +1,6 @@
 from typing import List
 from redis import Redis
-from .storage import StorageUnavailableException
+from .errors import StorageUnavailableException
 
 
 class StreamIterator:
