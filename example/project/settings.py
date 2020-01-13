@@ -148,7 +148,7 @@ class Feature1:
 @FEATS.feature
 class Feature2:
     """
-    This is a description of Feature1
+    This is a description of Feature2
     """
     @FEATS.default
     def my_default(self, s: str) -> str:
@@ -167,7 +167,7 @@ class Feature2:
 @FEATS.feature
 class Feature3:
     """
-    This is a description of Feature1
+    This is a description of Feature3
     """
     @FEATS.default
     def my_default(self, s: str) -> str:
@@ -186,7 +186,7 @@ class Feature3:
 @FEATS.feature
 class Feature4:
     """
-    This is a description of Feature1
+    This is a description of Feature4
     """
     @FEATS.default
     def my_default(self, s: str) -> str:
@@ -205,7 +205,7 @@ class Feature4:
 @FEATS.feature
 class Feature5:
     """
-    This is a description of Feature1
+    This is a description of Feature5
     """
     @FEATS.default
     def my_default(self, s: str) -> str:
@@ -224,7 +224,7 @@ class Feature5:
 @FEATS.feature
 class Feature6:
     """
-    This is a description of Feature1
+    This is a description of Feature6
     """
     @FEATS.default
     def my_default(self, s: str) -> str:
@@ -243,7 +243,7 @@ class Feature6:
 @FEATS.feature
 class Feature7:
     """
-    This is a description of Feature1
+    This is a description of Feature7
     """
     @FEATS.default
     def my_default(self, s: str) -> str:
