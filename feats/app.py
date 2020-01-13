@@ -7,8 +7,6 @@ from .feature import default
 from .meta import Definition
 from .segment import Segment
 from .state import FeatureState
-from .utils import fn_to_implementations
-from .utils import obj_to_implementations
 
 
 class FeatureHandle:
@@ -112,8 +110,7 @@ class App:
             raise ValueError("Invalid feature object - expected class")
 
         obj = cls()
-        implementations, annotations = obj_to_implementations(obj)
-        definition = Definition(obj.__doc__, implementations, annotations)
+        definition = Definition.from_object(obj)
         feature = Feature(definition)
         name = self._name(cls)
         handle = FeatureHandle(self, name, feature)
@@ -153,8 +150,7 @@ class App:
             raise ValueError(f"Expected bool return type - got {return_type}")
 
         fn = self.default(fn)
-        implementations, annotations = fn_to_implementations(fn)
-        definition = Definition(fn.__doc__, implementations, annotations)
+        definition = Definition.from_function(fn)
         feature = Feature(definition)
         name = fn.__name__
         handle = FeatureHandle(self, name, feature)
@@ -181,8 +177,7 @@ class App:
             raise ValueError("Invalid segment object - expected class")
 
         obj = cls()
-        implementations, annotations = obj_to_implementations(obj)
-        definition = Definition(obj.__doc__, implementations, annotations)
+        definition = Definition.from_object(obj)
         seg = Segment(definition)
         name = self._name(cls)
         self.segments[name] = seg

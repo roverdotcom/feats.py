@@ -48,3 +48,33 @@ class Definition:
         self.description = description
         self.implementations = implementations
         self.annotations = annotations
+
+    @classmethod
+    def from_function(cls, fn):
+        implementations: Dict[str, Implementation] = {}
+        annotations = defaultdict(list)
+        impl = Implementation(fn)
+        implementations[impl.name] = impl
+
+        if hasattr(fn, '_feats_annotations_'):
+            for annotation in fn._feats_annotations_:
+                annotations[annotation].append(impl)
+
+        return cls(fn.__doc__, implementations, annotations)
+
+    @classmethod
+    def from_object(cls, obj):
+        implementations: Dict[str, Implementation] = {}
+        annotations = defaultdict(list)
+
+        for key in dir(obj):
+            value = getattr(obj, key)
+            if key.startswith('_') or not callable(value):
+                continue
+            impl = Implementation(value)
+            implementations[impl.name] = impl
+            if hasattr(value, '_feats_annotations_'):
+                for annotation in value._feats_annotations_:
+                    annotations[annotation].append(impl)
+
+        return cls(obj.__doc__, implementations, annotations)

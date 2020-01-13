@@ -1,14 +1,10 @@
 from unittest import TestCase
 
+from feats.feature import default
 from feats.meta import Implementation, Definition
-from feats.utils import fn_to_implementations
-from feats.utils import obj_to_implementations
 
 
 class FullySpecified:
-    """
-    This is a feature class
-    """
     def nullary(self) -> str:
         return "nullary"
 
@@ -36,14 +32,21 @@ class Empty:
     pass
 
 
+@default
 def FullySpecifiedFunc(arg: str) -> bool:
-    """
-    This is a feature function
-    """
     return True
 
 
-FullySpecifiedFunc._feats_annotations_ = ["default"]
+def NoReturnTypeFunc(arg: str):
+    return True
+
+
+def NoInputTypeFunc(arg) -> bool:
+    return True
+
+
+def PartialInputTypeFunc(arg1, arg2: str) -> bool:
+    return True
 
 
 class ImplementationTests(TestCase):
@@ -99,26 +102,57 @@ class ImplementationTests(TestCase):
 
 
 class DefinitionTests(TestCase):
-    def test_empty(self):
-        with self.assertRaises(ValueError):
-            obj = Empty()
-            implementations, annotations = obj_to_implementations(obj)
-            Definition(obj.__doc__, implementations, annotations)
+    def test_invalid(self):
+        for cls in (Empty, Incomplete):
+            with self.subTest(cls), self.assertRaises(ValueError):
+                Definition.from_object(cls())
 
     def test_fully_specified(self):
         obj = FullySpecified()
-        implementations, annotations = obj_to_implementations(obj)
-        definition = Definition(obj.__doc__, implementations, annotations)
+        definition = Definition.from_object(obj)
+        with self.subTest("impls"):
+            impls = definition.implementations
+            self.assertEqual(len(impls), 3)
+            for name in ["nullary", "unary", "binary"]:
+                with self.subTest(name):
+                    self.assertTrue(name in impls)
+                    self.assertEqual(getattr(obj, name), impls[name].fn)
 
-        self.assertEqual(definition.description.strip(), "This is a feature class")
-        self.assertEqual(definition.implementations, implementations)
-        self.assertEqual(definition.annotations, annotations)
+        with self.subTest("annotations"):
+            self.assertEqual(len(definition.annotations), 2)
+            with self.subTest("default"):
+                default = definition.annotations["default"]
+                self.assertEqual(len(default), 1)
+                self.assertEqual(default[0].fn, obj.binary)
+
+            with self.subTest("special"):
+                special = definition.annotations["special"]
+                self.assertEqual(len(special), 2)
+                names = set([x.name for x in special])
+                self.assertEqual(set(["binary", "unary"]), names)
+
+            with self.subTest("undeclared"):
+                self.assertEqual(len(definition.annotations["undeclared"]), 0)
+
+    def test_invalid_fns(self):
+        for fn in (NoReturnTypeFunc, NoInputTypeFunc, PartialInputTypeFunc):
+            with self.subTest(fn), self.assertRaises(ValueError):
+                Definition.from_function(fn)
 
     def test_fully_specified_fn(self):
         fn = FullySpecifiedFunc
-        implementations, annotations = fn_to_implementations(fn)
-        definition = Definition(fn.__doc__, implementations, annotations)
+        definition = Definition.from_function(fn)
+        with self.subTest("impls"):
+            impls = definition.implementations
+            self.assertEqual(len(impls), 1)
+            self.assertTrue(fn.__name__ in impls)
+            self.assertEqual(fn, impls[fn.__name__].fn)
 
-        self.assertEqual(definition.description.strip(), "This is a feature function")
-        self.assertEqual(definition.implementations, implementations)
-        self.assertEqual(definition.annotations, annotations)
+        with self.subTest("annotations"):
+            self.assertEqual(len(definition.annotations), 1)
+            default = definition.annotations["default"]
+            self.assertEqual(len(default), 1)
+            self.assertEqual(default[0].fn, fn)
+
+            with self.subTest("undeclared"):
+                self.assertEqual(len(definition.annotations["undeclared"]), 0)

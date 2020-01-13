@@ -1,8 +1,6 @@
 from feats.segment import Segment
 from unittest import TestCase
 from feats.meta import Definition
-from feats.utils import fn_to_implementations
-from feats.utils import obj_to_implementations
 
 
 class StringSegment:
@@ -32,13 +30,11 @@ class SegmentTests(TestCase):
     def test_ambiguous(self):
         with self.assertRaises(ValueError):
             obj = AmbiguousSegment()
-            implementations, annotations = obj_to_implementations(obj)
-            Segment(Definition(obj.__doc__, implementations, annotations))
+            Segment(Definition.from_object(obj))
 
     def test_one_impl(self):
         obj = IntSegment()
-        implementations, annotations = obj_to_implementations(obj)
-        segment = Segment(Definition(obj.__doc__, implementations, annotations))
+        segment = Segment(Definition.from_object(obj))
 
         with self.subTest("valid input"):
             self.assertEqual("int", segment(1))
@@ -48,8 +44,7 @@ class SegmentTests(TestCase):
 
     def test_two_impl(self):
         obj = StringIntSegment()
-        implementations, annotations = obj_to_implementations(obj)
-        segment = Segment(Definition(obj.__doc__, implementations, annotations))
+        segment = Segment(Definition.from_object(obj))
 
         with self.subTest("valid input str"):
             self.assertEqual("string", segment("hi"))
