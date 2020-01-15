@@ -1,5 +1,6 @@
 from django import forms
 from django.apps import apps
+from django.shortcuts import render
 from django.http.response import HttpResponseRedirect
 from django.http.response import HttpResponseBadRequest
 from django.http import Http404
@@ -204,6 +205,11 @@ class ChangeSegmentation(TemplateView):
             )
 
         return HttpResponseBadRequest()
+
+    def get(self, request, *args, **kwargs):
+        if request.GET:
+            return render(request, 'feats/segmentation/change_mapping.html', self.get_context_data())
+        return render(request, 'feats/segmentation/change_segments.html', self.get_context_data())
 
 
 class SelectorForm(forms.Form):

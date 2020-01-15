@@ -1,14 +1,45 @@
 {% extends "feats/_template.html" %}
+{% block script %}
+<script>
+	function addRow(templateId, containerId, managementId) {
+		var totalForms = document.getElementById(managementId);
+		var template = document.getElementById(templateId);
+		var container = document.getElementById(containerId);
+		var newRow = document.createElement("div")
+		var formNumber = Number(totalForms.value)
+		newRow.className = "form-group"
+		newRow.innerHTML = template.innerHTML.replace(/__prefix__/g, formNumber);
+		container.append(newRow);
+		totalForms.value = formNumber + 1;
+	}
+</script>
+{% endblock %}
 {% block main %}
+{{ feature.name }} can be segmented based on the input type '{{feature.input_types|join:", "}}'.
+
+
 {% if formsets %}
-<form method="{{ form_method }}" action="">
+{% for formset in formsets %}
+<template id="empty-form-{{formset.prefix}}">
+	{% include "feats/_render_form.html" with form=formset.empty_form only %}
+</template>
+{% endfor %}
+<form method="{{ form_method }}" action="" autocomplete="off">
     {% if form_method == "POST" %}
 	    {% csrf_token %}
     {% endif %}
     {% for formset in formsets %}
-    {{formset}}
-    {% endfor %}
-    <input type="submit" value="Submit"/>
+    {{formset.management_form}}
+    <div id="form-{{formset.prefix}}-container">
+	    {% for form in formset %}
+	    	{% include "feats/_render_form.html" with form=form only %}
+	    {% endfor %}
+    </div>
+    <button class="btn btn-primary" type="button" onclick="addRow('empty-form-{{formset.prefix}}', 'form-{{formset.prefix}}-container', 'id_{{formset.prefix}}-TOTAL_FORMS')">
+	Add Row
+	</button>
+{% endfor %}
+    <input class="btn btn-primary" type="submit" value="Submit"/>
 </form>
 {% else %}
 <p>
