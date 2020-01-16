@@ -19,7 +19,7 @@
 {{ feature.name }} can be segmented based on the input type '{{feature.feature.input_types|join:", "}}'.
 </p>
 {% comment %} TODO: Display current segmentation for context{% endcomment %}
-{% if not formsets %}
+{% if not formset %}
 <p> There are no registered segments which match the required input type for this feature.
 
 A segment which can handle {{feature.input_types|join:", "}} will need to be registered first.
@@ -28,7 +28,7 @@ A segment which can handle {{feature.input_types|join:", "}} will need to be reg
 <template id="empty-form-{{formset.prefix}}">
 	{% include "feats/_render_form.html" with form=forset.empty_form only %}
 </template>
-<form method="GET" action="" autocomplete="off">
+<form method="GET" action="{% url 'feats:update-mapping' feature.name %}" autocomplete="off">
     {{formset.management_form}}
 	<div id="form-{{formset.prefix}}-container">
 	{% for form in formset %}

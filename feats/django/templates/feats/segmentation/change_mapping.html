@@ -15,12 +15,14 @@
 </script>
 {% endblock %}
 {% block main %}
+<p>
+How should {{segment_names|join:" ,"}} be routed to implementations?
+</p>
 <template id="empty-form-{{formset.prefix}}">
 	{% include "feats/_render_form.html" with form=formset.empty_form only %}
 </template>
 <form method="POST" action="" autocomplete="off">
 	{% csrf_token %}
-	{{read_only_formset}}
 	{{formset.management_form}}
 	{% for form in formset %}
 	<div id="form-{{formset.prefix}}-container">
@@ -28,7 +30,7 @@
 	</div>
 	{% endfor %}
 	<button class="btn btn-secondary" type="button" onClick="addRow('empty-form-{{formset.prefix}}', 'form-{{formset.prefix}}-container', 'id_{{formset.prefix}}-TOTAL_FORMS')">
-		Add Another
+		Add Another Mapping
 	</button>
 	<input class="btn btn-primary" type="submit" value="Save Mapping"/>
 </form>
