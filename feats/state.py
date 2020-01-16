@@ -71,11 +71,11 @@ class FeatureState:
         Compiles the serialized data from the store and constructs an
         instance of FeatureState from it.
         """
-        version = data.pop('version')
+        version = data['version']
         if version != cls.version:
             raise InvalidSerializerVersion
-        segmentation = json.loads(data.pop('segmentation'))
-        created_by = data.pop('created_by')
+        segmentation = json.loads(data['segmentation'])
+        created_by = data['created_by']
         selector_data = {
             k: cls._build_selector(app, v) for k, v in data.items() if k.startswith('selector:')
         }
