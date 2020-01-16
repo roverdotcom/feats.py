@@ -29,14 +29,13 @@ A segment which can handle {{feature.input_types|join:", "}} will need to be reg
 	{% include "feats/_render_form.html" with form=forset.empty_form only %}
 </template>
 <form method="GET" action="" autocomplete="off">
+    {{formset.management_form}}
 	<div id="form-{{formset.prefix}}-container">
 	{% for form in formset %}
-		{% for form in formset %}
 		{% include "feats/_render_form.html" with form=form only %}
-		{% endfor %}
 	{% endfor %}
 	</div>
 	<input class="btn btn-primary" type="submit" value="Continue"/>
-</form>	
+</form>
 {% endif %}
 {% endblock %}

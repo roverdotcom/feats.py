@@ -67,7 +67,7 @@ class FeatureSegmentForm(forms.Form):
 def selector_mapping_formset(segments, state, data=None):
     class FormsetForm(SelectorMappingForm):
         def __init__(self, *args, **kwargs):
-            super().__init__(segments, state.selectors, *args, **kwargs) 
+            super().__init__(segments, state.selectors, *args, **kwargs)
     return forms.formset_factory(FormsetForm)(data=data, prefix='selector-mapping')
 
 
@@ -121,9 +121,6 @@ class ChangeSegmentation(TemplateView):
     @property
     def feature(self):
         return app_config.feats_app.features[self.args[0]]
-
-    def get_state(self, feature):
-        state = feature
 
     def get_segment_formset(self, feature, data):
         return feature_segment_formset(feature, data=data)
