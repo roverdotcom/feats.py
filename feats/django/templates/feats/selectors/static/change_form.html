@@ -1,8 +1,0 @@
-<form action="" method="post">
-    <select name="value" required>
-        <option value="" selected>Select an implementation</option>
-        {% for impl in feature.feature.implementations %}
-        <option value="{{impl.name}}">{{impl.name}}</option>
-        {% endfor %}
-    </select>
-</form>
