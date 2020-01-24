@@ -42,7 +42,7 @@ class SerializeStateTests(TestCase):
 
     def _create_rollout_selector(self):
         (_, v), = self.app.segments.items()
-        return Rollout(v, {
+        return Rollout('test.name', v, {
             '0': 1,
         })
 
@@ -51,16 +51,17 @@ class SerializeStateTests(TestCase):
             ('value_match',): selectors[0],
         }
 
-    def _create_feature_state(self):
+    def _create_feature_state(self, **kwargs):
         selectors = [self._create_rollout_selector()]
         (_, segment), = self.app.segments.items()
         selector_mapping = self._build_selector_mapping(selectors)
-        return FeatureState(
-            segments=[segment],
-            selectors=selectors,
-            selector_mapping=selector_mapping,
-            created_by='foo@bar.baz'
-        )
+        return FeatureState(**{
+            'segments': [segment],
+            'selectors': selectors,
+            'selector_mapping': selector_mapping,
+            'created_by': 'foo@bar.baz',
+            **kwargs
+        })
 
     def test_deserialize_raises_error_wrong_serializer_version(self):
         with self.assertRaises(errors.InvalidSerializerVersion):
@@ -95,4 +96,31 @@ class SerializeStateTests(TestCase):
         self.assertEqual(feature_state.segments, constructed.segments)
         self.assertEqual(feature_state.created_by, constructed.created_by)
         self.assertEqual(feature_state.selector_mapping[('value_match',)].__class__, Rollout)
+        self.assertEqual(feature_state.selectors[0].__class__, Rollout)
+
+    def test_serializes_with_fallthrough(self):
+        selector = self._create_rollout_selector()
+        state = self._create_feature_state(
+            selectors=[selector],
+            selector_mapping={None: selector}
+        )
+        serialized = state.serialize(self.app)
+        data = self._serialized_data()
+        data.pop('segment:["value_match"]')
+        data['segment:null'] = 'selector:0'
+        self.assertEqual(data, serialized)
+
+    def test_deserializes_fallthrough(self):
+        data = self._serialized_data()
+        data.pop('segment:["value_match"]')
+        data['segment:null'] = 'selector:0'
+        feature_state = FeatureState.deserialize(self.app, data)
+        selector = self._create_rollout_selector()
+        constructed = self._create_feature_state(
+            selectors=[selector],
+            selector_mapping={None: selector}
+        )
+        self.assertEqual(feature_state.segments, constructed.segments)
+        self.assertEqual(feature_state.created_by, constructed.created_by)
+        self.assertEqual(feature_state.selector_mapping[None].__class__, Rollout)
         self.assertEqual(feature_state.selectors[0].__class__, Rollout)

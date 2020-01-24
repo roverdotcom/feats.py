@@ -1,0 +1,95 @@
+{% extends "feats/_template.html" %}
+
+{% block main %}
+<section>
+    {% if feature.feature.description %}
+    <p class="lead"/>{{ feature.feature.description }}</p>
+    {% endif %}
+</section>
+<section>
+    <h2> Implementations </h2>
+    <dl>
+        {% for name, impl in feature.feature.implementations.items %}
+        <dt>
+            {% if impl is feature.feature.default_implementation %}
+            (Default)
+            {% endif %}
+            {{ name }}
+        </dt>
+        <dd>
+            {% if impl.description %}
+                {{ impl.description }}
+            {% else %}
+                No description provided
+            {% endif %}
+        </dd>
+        {% endfor %}
+    </dl>
+</section>
+<section>
+    <h2>
+        Configuration
+    </h2>
+    {% if feature.feature.input_types %}
+	<section>
+		<h3>Segmentation
+		<a href="{% url 'feats:update-segmentation' feature.name %}">✎</a>
+        </h3>
+		{% if state.selector_mapping.items %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    {% for segment in segment_names %}
+                    <th>
+                        {{segment}}
+                    </th>
+                    {% endfor %}
+                    <th>
+                        Selector
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+	{% for mapping, selector in state.selector_mapping.items %}
+                <tr>
+                {% for segment_value in mapping %}
+                <td> {{ segment_value }} </td>
+                {% empty %}
+                {% for segment in segment_names %}
+                <td> * </td>
+                {% endfor %}
+                {% endfor %}
+                <td> {{ selector.name }} </td>
+                </tr>
+	{% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+		No Segmentation Specified
+		{% endif %}
+
+	</section>
+	<section>
+		<h3>Selectors</h3>
+		<dl>
+		{% for selector in state.selectors %}
+		<dt>
+		{{ selector.name }} 
+		<a href="{% url 'feats:update-selector' feature.name forloop.counter0 %}">✎</a>
+		</dt>
+		<dd>
+		{% include "feats/_selector.html" with selector=selector only %}
+		</dd>
+		{% empty %}
+		<p>No selectors configured. The default implementation will always be used.</p>
+		{% endfor %}
+		</dl>
+		<a href="{% url 'feats:add-selector' feature.name %}">Add Selector</a>
+	</section>
+    {% else %}
+       TODO: No-args
+    {% endif %}
+</section>
+
+
+{% endblock %}

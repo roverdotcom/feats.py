@@ -57,20 +57,3 @@ class Feature:
     def implementations(self):
         return self.definition.implementations
 
-
-class _TrueDefault:
-    @default
-    def true(self, *args) -> bool:
-        return True
-
-    def false(self, *args) -> bool:
-        return False
-
-
-class _FalseDefault:
-    def true(self, *args) -> bool:
-        return True
-
-    @default
-    def false(self, *args) -> bool:
-        return False

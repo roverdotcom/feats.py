@@ -1,0 +1,8 @@
+{% if field.is_hidden %}
+{{ field }}
+{% else %}
+<div class="form-group">
+    {{field.label_tag}}
+    {{field}}
+</div>
+{% endif %}
