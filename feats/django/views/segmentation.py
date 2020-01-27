@@ -158,7 +158,7 @@ class ChangeSegmentation(base.TemplateView):
     Changes how a Feature is Segmented and how selectors map to those segments.
 
     Updating segmentation resets any selector mappings, so this form is done in
-    two stepsr
+    two steps
     The first form submits through a GET to mapping url with the segments.
         This does not save any data to the database.
     The next form submits through a POST to mapping url with the segments and mappings.
