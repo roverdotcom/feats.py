@@ -49,7 +49,7 @@ class FeatureHandle:
     def get_current_state(self) -> FeatureState:
         states = self.app.storage[self.name]
         try:
-            state_data = copy.deepcopy(states[-1])
+            state_data = states.last()
         except IndexError:
             return None
 
