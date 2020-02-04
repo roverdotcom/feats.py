@@ -1,0 +1,37 @@
+{% extends "feats/_template.html" %}
+{% block script %}
+<script>
+	function addRow(templateId, containerId, managementId) {
+		var totalForms = document.getElementById(managementId);
+		var template = document.getElementById(templateId);
+		var container = document.getElementById(containerId);
+		var newRow = document.createElement("div")
+		var formNumber = Number(totalForms.value)
+		newRow.className = "form-group"
+		newRow.innerHTML = template.innerHTML.replace(/__prefix__/g, formNumber);
+		container.append(newRow);
+		totalForms.value = formNumber + 1;
+	}
+</script>
+{% endblock %}
+{% block main %}
+<p>
+How should {{segment_names|join:" ,"}} be routed to implementations?
+</p>
+<template id="empty-form-{{formset.prefix}}">
+	{% include "feats/_render_form.html" with form=formset.empty_form only %}
+</template>
+<form method="POST" action="" autocomplete="off">
+	{% csrf_token %}
+	{{formset.management_form}}
+	{% for form in formset %}
+	<div id="form-{{formset.prefix}}-container">
+		{% include "feats/_render_form.html" with form=form only %}
+	</div>
+	{% endfor %}
+	<button class="btn btn-secondary" type="button" onClick="addRow('empty-form-{{formset.prefix}}', 'form-{{formset.prefix}}-container', 'id_{{formset.prefix}}-TOTAL_FORMS')">
+		Add Another Mapping
+	</button>
+	<input class="btn btn-primary" type="submit" value="Save Mapping"/>
+</form>
+{% endblock %}

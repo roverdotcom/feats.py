@@ -1,0 +1,16 @@
+{% for name, fieldset in form.fieldsets %}
+<fieldset class="form-group">
+    {% if name %}
+    <legend>
+        {{name}}
+    </legend>
+    {% endif %}
+    {% for field in fieldset %}
+    {% include "feats/_render_field.html" with field=field only %}
+    {% endfor %}
+</fieldset>
+{% empty %}
+{% for field in form %}
+{% include "feats/_render_field.html" with field=field only %}
+{% endfor %}
+{% endfor %}

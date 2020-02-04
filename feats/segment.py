@@ -42,7 +42,7 @@ class Segment:
             raise ValueError("Multiple implementations match {}".format(cls))
         return found[0]
 
-    def __call__(self, value) -> str:
+    def segment(self, value) -> str:
         """
         Segments the value by calling the implementation appropriate to the
         value's type.

@@ -1,5 +1,6 @@
 import inspect
 from typing import Dict
+import copy
 
 from .storage import Storage
 from .errors import UnknownSelectorName, UnknownSegmentName
@@ -21,16 +22,14 @@ class FeatureHandle:
         """
         Returns the name of the implementation to use for the argument(s).
         """
-        states = self.app.storage[self.name]
-        try:
-            state_data = states[-1]
-            state = FeatureState.deserialize(self.app, state_data)
+        state = self.get_current_state()
+        name = None
+        if state is None:
             name = state.select_implementation(*args)
-        except IndexError:
-            name = None
 
         if name is None:
-            return self.feature.default_implementation.name
+            name = self.feature.default_implementation.name
+
         return name
 
     def create(self, *args) -> object:
@@ -42,6 +41,19 @@ class FeatureHandle:
         """
         impl_name = self.find(*args)
         return self.feature.implementations[impl_name].fn(*args)
+
+    def set_state(self, new_state: FeatureState):
+        serialized_state = copy.deepcopy(new_state.serialize(self.app))
+        self.app.storage[self.name].append(serialized_state)
+
+    def get_current_state(self) -> FeatureState:
+        states = self.app.storage[self.name]
+        try:
+            state_data = copy.deepcopy(states[-1])
+        except IndexError:
+            return None
+
+        return FeatureState.deserialize(self.app, state_data)
 
     def valid_segments(self):
         """
@@ -213,8 +225,3 @@ class App:
         seg = Segment(name, definition)
         self.segments[name] = seg
         return seg
-
-    def configure_feature(self, feature: Feature, state: FeatureState):
-        # TODO: Validate state against segments?
-        serialized_state = state.serialize(self)
-        self.storage[feature].append(serialized_state)

@@ -1,0 +1,12 @@
+{% load selector_type from feats %}
+
+{% if selector|selector_type == "feats.selector.Static" %}
+{% include "feats/selectors/_static.html" with selector=selector %}
+{% elif selector|selector_type == "feats.selector.Rollout" %}
+{% include "feats/selectors/_rollout.html" with selector=selector %}
+{% elif selector|selector_type == "feats.selector.Experiment" %}
+{% include "feats/selectors/_experiment.html" with selector=selector %}
+{% else %}
+Unknown Selector Type "{{selector|selector_type}}"
+{% debug %}
+{% endif %}

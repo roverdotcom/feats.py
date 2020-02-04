@@ -13,14 +13,15 @@ class FeatureState:
         # selector_mapping is a dictionary from string tuples to selectors
         # The values of the tuple is the segmentation of the input to the
         # feature in the order that the segments are specified
+        # the special "None" key, if specified, is used if no mapping is found.
         self.segments = segments
         self.selectors = selectors
         self.selector_mapping = selector_mapping
         self.created_by = created_by
 
     def select_implementation(self, *args) -> str:
-        segment_values = [segment(*args) for segment in self.segments]
-        selector = self.selector_mapping.get(segment_values, None)
+        segment_values = tuple([segment(*args) for segment in self.segments])
+        selector = self.selector_mapping.get(segment_values, self.selector_mapping.get(None))
         if selector is None:
             return None
         return selector.select(*args)
@@ -86,8 +87,11 @@ class FeatureState:
         selector_mapping = {}
         for segment, selector_key in segment_data.items():
             selector = selector_data[selector_key]
-            # Convert "selector:['us','android']" to ('us', 'android')
-            key = tuple(json.loads(segment.split(':', 1)[1]))
+            # Convert 'selector:["us","android"]' to ('us', 'android')
+            key = json.loads(segment.split(':', 1)[1])
+            # key can be none if they are using a fallthrough
+            if key is not None:
+                key = tuple(key)
             selector_mapping[key] = selector
 
         return cls(

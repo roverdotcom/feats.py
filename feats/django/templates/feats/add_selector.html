@@ -1,0 +1,91 @@
+{% extends "feats/_template.html" %}
+
+{% block main %}
+{% comment %} TODO: Move the shared feature detail into an include {% endcomment %}
+<section>
+    <h1> Add Selector for {{ feature.name }} </h1>
+</section>
+<section>
+    <h2>Implementations</h2>
+    <dl>
+        {% for name, impl in feature.feature.implementations.items %}
+        <dt>
+            {% if impl is feature.feature.default_implementation %}
+            (Default)
+            {% endif %}
+            {{ name }}
+        </dt>
+        <dd>
+            {% if impl.description %}
+                {{ impl.description }}
+            {% else %}
+                No description provided
+            {% endif %}
+        </dd>
+        {% endfor %}
+    </dl>
+</section>
+<section>
+    <h2>Selector Types</h2>
+    <p>
+    All newly created selectors are "inactive" until they have been mapped to
+    a segment.
+    </p>
+    <nav>
+        <div class="nav nav-tabs" id="selector-types" role="tablist">
+            <a class="nav-link active" id="static-tab" data-toggle="tab" href="#static" role="tab" aria-controls="static" aria-selected="true">Static</a>
+            <a class="nav-link" id="rollout-tab" data-toggle="tab" href="#rollout" role="tab" aria-controls="rollout" aria-selected="false">Rollout</a>
+            <a class="nav-link" id="experiment-tab" data-toggle="tab" href="#experiment" role="tab" aria-controls="experiment" aria-selected="false">Experiment</a>
+        </div>
+    </nav>
+    <div class="tab-content" id="selector-type-forms">
+        <div class="tab-pane active show" id="static" role="tabpanel" aria-labelledby="static-tab">
+            <p>
+            Always selects a single implementation to be used for the linked
+            segments.
+            </p>
+            <form method="POST" action="">
+                {% csrf_token %}
+                {% include "feats/_render_form.html" with form=forms.static only %}
+                <input type="submit" class="btn btn-primary" value="Submit"/>
+            </form>
+        </div>
+        <div class="tab-pane" id="rollout" role="tabpanel" aria-labelledby="rollout-tab">
+            <p>
+                Deterministically selects an implementation based on the relative
+                weights between different implementations.
+
+                Rollouts are designed to be able to change the weights after the
+                initial setup in order to expand the audience for an implementation.
+
+                Objects will always receive the same implementation as long as the
+                weights do not change.
+
+                Useful for doing releases of new features or implementations.
+            </p>
+            <form method="POST" action="">
+                {% csrf_token %}
+                {% include "feats/_render_form.html" with form=forms.rollout only %}
+                <input type="submit" class="btn btn-primary" value="Submit"/>
+            </form>
+        </div>
+        <div class="tab-pane" id="experiment" role="tabpanel" aria-labelledby="experiment-tab">
+            <p>
+                Randomly selects an implementation based on the relative weights
+                between different implementations.
+
+                Stores the results of previous selections to ensure objects
+                always receive the same implementation regardless of how the
+                configured weights change.
+
+                Useful for doing product A/B tests.
+            </p>
+            <form method="POST" action="">
+                {% csrf_token %}
+                {% include "feats/_render_form.html" with form=forms.experiment only %}
+                <input type="submit" class="btn btn-primary" value="Submit"/>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

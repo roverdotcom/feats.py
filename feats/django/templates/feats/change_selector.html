@@ -1,0 +1,37 @@
+{% extends "feats/_template.html" %}
+{% load selector_type from feats %}
+
+{% block main %}
+{% comment %} TODO: Move the shared feature detail into an include {% endcomment %}
+<section>
+    <h1> {{selector.name }} of {{ feature.name }} </h1>
+</section>
+<section>
+    <h2>Options</h2>
+    <dl>
+        {% for name, impl in feature.feature.implementations.items %}
+        <dt>
+            {% if impl is feature.feature.default_implementation %}
+            (Default)
+            {% endif %}
+            {{ name }}
+        </dt>
+        <dd>
+            {% if impl.description %}
+                {{ impl.description }}
+            {% else %}
+                No description provided
+            {% endif %}
+        </dd>
+        {% endfor %}
+    </dl>
+</section>
+<section>
+    <h2>Configuration</h2>
+    <form method="POST" action="">
+	    {% csrf_token %}
+	    {% include "feats/_render_form.html" with form=form %}
+	    <input type="submit" class="btn btn-primary" value="Update"/>
+    </form>
+</section>
+{% endblock %}
