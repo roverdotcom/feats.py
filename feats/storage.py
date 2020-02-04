@@ -21,8 +21,9 @@ Mainly useful for testing environments.
 """
 class MemoryList(list):
     """
-    An implementation of list with deepcopy guard rails to prevent
-    mutating state in the memory store
+    This is an append-only list meant to store serialized feature states.
+    It is immutable by design and returns deep copies so accidental mutations
+    are prevented
     """
     def last(self):
         return self[-1]
@@ -32,8 +33,7 @@ class MemoryList(list):
         return deepcopy(item)
 
     def __setitem__(self, i, value):
-        clone = deepcopy(value)
-        super().__setitem__(i, clone)
+        raise TypeError("'MemoryList' object does not support item assignment")
 
     def append(self, value):
         clone = deepcopy(value)

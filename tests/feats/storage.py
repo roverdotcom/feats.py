@@ -36,14 +36,10 @@ class MemoryStorageTests(TestCase):
         data['new'] = 'data'
         self.assertEqual(stream.last()['new'], 'entry')
 
-    def test_set_saves_copy(self):
+    def test_set_raises_type_error(self):
         stream = self.storage[self.stream_name]
-        data = {
-            'new': 'entry'
-        }
-        stream[0] = data
-        data['new'] = 'data'
-        self.assertEqual(stream[0]['new'], 'entry')
+        with self.assertRaises(TypeError):
+            stream[0] = {}
 
     def test_get_item_returns_copy(self):
         stream = self.storage[self.stream_name]
