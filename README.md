@@ -1,4 +1,4 @@
-![](https://github.com/roverdotcom/feats.py/workflows/Unit%20Tests/badge.svg)
+![](https://github.com/roverdotcom/feats.py/workflows/Unit%20Tests/badge.svg?branch=master)
 
 # COMING SOON!
 
