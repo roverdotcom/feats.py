@@ -1,3 +1,5 @@
+![](https://github.com/roverdotcom/feats.py/workflows/Unit%20Tests/badge.svg)
+
 # COMING SOON!
 
 Feats.py is still actively being developed and as such, is **not** yet ready for
