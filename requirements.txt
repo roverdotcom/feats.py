@@ -1,2 +1,2 @@
-redis==3.3.11
+redis>=3.0.1
 django>=1.11
