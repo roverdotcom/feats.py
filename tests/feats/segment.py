@@ -37,20 +37,20 @@ class SegmentTests(TestCase):
         segment = Segment('segment.name', Definition.from_object(obj))
 
         with self.subTest("valid input"):
-            self.assertEqual("int", segment(1))
+            self.assertEqual("int", segment.segment(1))
 
         with self.subTest("invalid input"), self.assertRaises(ValueError):
-            segment("hello")
+            segment.segment("hello")
 
     def test_two_impl(self):
         obj = StringIntSegment()
         segment = Segment('segment.name', Definition.from_object(obj))
 
         with self.subTest("valid input str"):
-            self.assertEqual("string", segment("hi"))
+            self.assertEqual("string", segment.segment("hi"))
 
         with self.subTest("valid input int"):
-            self.assertEqual("int", segment(0))
+            self.assertEqual("int", segment.segment(0))
 
         with self.subTest("invalid input"), self.assertRaises(ValueError):
-            segment(object())
+            segment.segment(object())
