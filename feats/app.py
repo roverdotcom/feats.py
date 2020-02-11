@@ -24,7 +24,7 @@ class FeatureHandle:
         """
         state = self.get_current_state()
         name = None
-        if state is None:
+        if state is not None:
             name = state.select_implementation(*args)
 
         if name is None:
