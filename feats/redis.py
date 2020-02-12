@@ -94,7 +94,6 @@ class FeatureStream:
             return None
         return info['first-entry'][1]
 
-
     def __len__(self) -> int:
         """
         Wrapper for stream xlen
