@@ -51,9 +51,6 @@ class FeatureInitializationTests(TestCase):
         self.client = RedisClient(host='redis')
         self.stream = self.client[self.id()]
 
-    def test_initial_state(self):
-        self.assertEqual(None, self.stream.last())
-
     def test_append_to_initial_state(self):
         self.stream.append({'foo': 'bar'})
         self.assertEqual({'foo': 'bar'}, self.stream.last())
@@ -66,7 +63,12 @@ class FeatureInitializationTests(TestCase):
             self.fail("Shouldn't have any items in the stream")
 
     def test_first(self):
-        self.assertEqual(None, self.stream.first())
+        with self.assertRaises(IndexError):
+            self.stream.first()
+
+    def test_last(self):
+        with self.assertRaises(IndexError):
+            self.stream.last()
 
 
 class FeatureTests(TestCase):

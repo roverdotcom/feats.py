@@ -61,7 +61,7 @@ class FeatureStream:
         if self._redis.exists(self.key):
             return self._redis.xinfo_stream(self.key)
         else:
-            return None
+            raise IndexError()
 
     def read(self, index) -> dict:
         """
@@ -81,8 +81,6 @@ class FeatureStream:
         Returns the value of the latest entry in the Redis Stream (omitting id)
         """
         info = self.info()
-        if info is None:
-            return None
         return info['last-entry'][1]
 
     def first(self) -> dict:
@@ -90,8 +88,6 @@ class FeatureStream:
         Returns the value of the first entry in the Redis Stream (omitting id)
         """
         info = self.info()
-        if info is None:
-            return None
         return info['first-entry'][1]
 
     def __len__(self) -> int:
