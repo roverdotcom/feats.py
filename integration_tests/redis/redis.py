@@ -46,6 +46,29 @@ class RedisClientTests(TestCase):
             mock.assert_called_once_with(client.connection, key, prefix)
 
 
+class FeatureInitializationTests(TestCase):
+    def setUp(self):
+        self.client = RedisClient(host='redis')
+        self.stream = self.client[self.id()]
+
+    def test_initial_state(self):
+        self.assertEqual(None, self.stream.last())
+
+    def test_append_to_initial_state(self):
+        self.stream.append({'foo': 'bar'})
+        self.assertEqual({'foo': 'bar'}, self.stream.last())
+
+    def test_len(self):
+        self.assertEqual(0, len(self.stream))
+
+    def test_iter(self):
+        for state in self.stream:
+            self.fail("Shouldn't have any items in the stream")
+
+    def test_first(self):
+        self.assertEqual(None, self.stream.first())
+
+
 class FeatureTests(TestCase):
     def setUp(self):
         super().setUp()
