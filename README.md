@@ -53,7 +53,7 @@ module.
 #myapp/feats.py
 import feats
 import myapp.config
-app = feats.App(storage=feats.RedisStore(url=config.redis_url))
+app = feats.App(storage=RedisStorage(redis=Redis(decode_responses=True)))
 ```
 
 When we need to declare features and segments, we will then always use the

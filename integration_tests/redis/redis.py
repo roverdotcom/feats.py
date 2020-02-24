@@ -1,16 +1,16 @@
 from unittest import TestCase
 from unittest.mock import patch
-
+from redis import Redis
 from feats.redis import FeatureStream
-from feats.redis import RedisClient
+from feats.redis import RedisStorage
 from feats.redis import StreamIterator
 from feats.errors import StorageUnavailableException
 
 
-class RedisClientTests(TestCase):
+class RedisStorageTests(TestCase):
     def setUp(self):
         super().setUp()
-        self.client = RedisClient(host='redis')
+        self.client = RedisStorage(redis=Redis(decode_responses=True, host='redis'))
 
     def test_connection_property_raises_error(self):
         self.client.disconnect()
@@ -32,15 +32,10 @@ class RedisClientTests(TestCase):
             mock.assert_called_once()
             self.assertIsNone(self.client._connection_object)
 
-    def test_options_can_override_defaults(self):
-        client = RedisClient(host='redis', decode_responses=False)
-        self.assertFalse(client.connection.connection_pool.connection_kwargs.get('decode_responses'))
-        self.assertTrue(self.client.connection.connection_pool.connection_kwargs.get('decode_responses'))
-
     def test_calls_feature_stream_with_prefix(self):
         key = 'somefeature'
         prefix = 'myprefix'
-        client = RedisClient(host='redis', key_prefix=prefix)
+        client = RedisStorage(redis=Redis(host='redis'), key_prefix=prefix)
         with patch.object(FeatureStream, '__init__', return_value=None) as mock:
             client[key]
             mock.assert_called_once_with(client.connection, key, prefix)
@@ -48,7 +43,7 @@ class RedisClientTests(TestCase):
 
 class FeatureInitializationTests(TestCase):
     def setUp(self):
-        self.client = RedisClient(host='redis')
+        self.client = RedisStorage(redis=Redis(host='redis', decode_responses=True))
         self.stream = self.client[self.id()]
 
     def test_append_to_initial_state(self):
@@ -74,7 +69,7 @@ class FeatureInitializationTests(TestCase):
 class FeatureTests(TestCase):
     def setUp(self):
         super().setUp()
-        self.client = RedisClient(host='redis')
+        self.client = RedisStorage(redis=Redis(host='redis', decode_responses=True))
         self._purge_stream()
 
     @property
@@ -107,7 +102,7 @@ class FeatureStreamTests(FeatureTests):
         self.assertEqual(stream.key, stream_key)
 
     def test_stream_key_uses_key_prefix_if_set(self):
-        client = RedisClient(host='redis', key_prefix='envname')
+        client = RedisStorage(redis=Redis(host='redis', decode_responses=True), key_prefix='envname')
         stream_key = 'envname:feature:a-feature-stream-key'
         stream = client['a-feature-stream-key']
         self.assertEqual(stream.key, stream_key)
@@ -168,7 +163,7 @@ class StreamIteratorTests(FeatureTests):
 class MultipleClientTests(FeatureTests):
     def setUp(self):
         super().setUp()
-        self.client2 = RedisClient(host='redis')
+        self.client2 = RedisStorage(redis=Redis(host='redis', decode_responses=True))
         self._purge_stream()
 
     def _get_stream2(self):

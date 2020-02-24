@@ -32,7 +32,7 @@ class FeatureStream:
     """
     This class provides utility methods for retrieving data from Redis.
     It should not be initialized directly but instead returned from keying off
-    a RedisClient instance.
+    a RedisStorage instance.
     """
     def __init__(self, redis, key, prefix=None):
         self.key = self._get_key(key, prefix)
@@ -106,7 +106,7 @@ class FeatureStream:
         return StreamIterator(stream)
 
 
-class RedisClient:
+class RedisStorage:
     """
     Wrapper class for the redis-py connection, provides some utility methods
     to adhere to the Storage interface -- namely indexing on stream keys and
@@ -115,9 +115,9 @@ class RedisClient:
     Initializing this class initializes the redis connection client but does
     _not_ test the connection to redis server.
     """
-    def __init__(self, host='localhost', port=6379, db=0, key_prefix=None, **options):
+    def __init__(self, redis=None, key_prefix=None, **options):
         self.key_prefix = key_prefix
-        self._connection_object = self._connect(host, port, db, **options)
+        self._connection_object = redis
 
     def _connect(self, host, port, db, **options):
         """
