@@ -1,4 +1,3 @@
-from collections import defaultdict
 from django.http import Http404
 from django.http.response import HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.functional import cached_property

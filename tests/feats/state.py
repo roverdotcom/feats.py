@@ -8,6 +8,7 @@ from feats.selector import Rollout
 from feats.storage import Memory
 from feats.state import FeatureState
 
+
 class SerializeStateTests(TestCase):
     def setUp(self):
         super().setUp()
@@ -22,6 +23,7 @@ class SerializeStateTests(TestCase):
             @self.app.default
             def foo(self) -> str:
                 return 'foo'
+
             def bar(self) -> str:
                 return 'bar'
 
@@ -68,7 +70,6 @@ class SerializeStateTests(TestCase):
             FeatureState.deserialize(self.app, self._serialized_data(
                 version='v0',
             ))
-
 
     def test_raises_error_unknown_segment(self):
         with self.assertRaises(errors.UnknownSegmentName):

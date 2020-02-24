@@ -41,7 +41,7 @@ class RolloutTests(TestCase):
         selector = Rollout('MyRollout', MockSegment(), {'0': 1})
         for key in self.keys:
             self.assertEqual(
-                selector.select(key), 
+                selector.select(key),
                 '0'
             )
 
