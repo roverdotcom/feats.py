@@ -221,42 +221,31 @@ class Feature5:
         return "An Alternative"
 
 
-@FEATS.feature
-class Feature6:
+@FEATS.boolean
+def ReticulateSplines(i: int) -> bool:
     """
-    This is a description of Feature6
+    Ensures Splines are reticulated
     """
-    @FEATS.default
-    def my_default(self, s: str) -> str:
-        """
-        This is a description of my default
-        """
-        return "The default"
-
-    def my_alternative(self, s: str) -> str:
-        """
-        This is a description of my alternative
-        """
-        return "An Alternative"
+    return True
 
 
-@FEATS.feature
-class Feature7:
+@FEATS.boolean
+def NoArgBoolean() -> bool:
     """
-    This is a description of Feature7
+    A boolean feature with no input to segment
     """
-    @FEATS.default
-    def my_default(self, s: str) -> str:
-        """
-        This is a description of my default
-        """
-        return "The default"
+    return False
 
-    def my_alternative(self, s: str) -> str:
-        """
-        This is a description of my alternative
-        """
-        return "An Alternative"
+
+@FEATS.segment
+class Parity:
+    """
+    Determines if the parity of the number, i.e if it is even or odd
+    """
+    def integer(self, i: int) -> str:
+        if i % 2 == 0:
+            return "Even"
+        return "Odd"
 
 
 @FEATS.segment

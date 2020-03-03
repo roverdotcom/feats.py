@@ -1,6 +1,7 @@
 import inspect
+from functools import wraps
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, List
 
 
 class Implementation:
@@ -36,7 +37,7 @@ class Definition:
     def __init__(
             self,
             description: str,
-            implementations: Dict[str, Implementation],
+            implementations: List[Implementation],
             annotations: Dict[str, list]):
 
         if len(implementations) == 0:
@@ -46,25 +47,49 @@ class Definition:
             )
 
         self.description = description
-        self.implementations = implementations
+        self.implementations = {
+            impl.name: impl for impl in implementations
+        }
         self.annotations = annotations
 
     @classmethod
     def from_function(cls, fn):
-        implementations: Dict[str, Implementation] = {}
-        annotations = defaultdict(list)
-        impl = Implementation(fn)
-        implementations[impl.name] = impl
+        # Wraps fn so we keep the same type annotations as the original fn
+        @wraps(fn, assigned=('__annotations__',))
+        def Enabled(*args, **kwargs):
+            # Call fn so we enforce the correct args
+            fn(*args, **kwargs)
+            return True
 
+        @wraps(fn, assigned=('__annotations__',))
+        def Default(*args, **kwargs):
+            """
+            Keeps the default behavior of the feature
+            """
+            return fn(*args, **kwargs)
+
+        @wraps(fn, assigned=('__annotations__',))
+        def Disabled(*args, **kwargs):
+            fn(*args, **kwargs)
+            return False
+
+        annotations = defaultdict(list)
+        default = Implementation(Default)
         if hasattr(fn, '_feats_annotations_'):
             for annotation in fn._feats_annotations_:
-                annotations[annotation].append(impl)
+                annotations[annotation].append(default)
 
-        return cls(fn.__doc__, implementations, annotations)
+        implementations = [
+            Implementation(Enabled),
+            default,
+            Implementation(Disabled),
+        ]
+
+        return cls(inspect.getdoc(fn), implementations, annotations)
 
     @classmethod
     def from_object(cls, obj):
-        implementations: Dict[str, Implementation] = {}
+        implementations: List[Implementation] = []
         annotations = defaultdict(list)
 
         for key in dir(obj):
@@ -72,9 +97,9 @@ class Definition:
             if key.startswith('_') or not callable(value):
                 continue
             impl = Implementation(value)
-            implementations[impl.name] = impl
+            implementations.append(impl)
             if hasattr(value, '_feats_annotations_'):
                 for annotation in value._feats_annotations_:
                     annotations[annotation].append(impl)
 
-        return cls(obj.__doc__, implementations, annotations)
+        return cls(inspect.getdoc(obj), implementations, annotations)

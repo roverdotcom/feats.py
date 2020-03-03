@@ -272,12 +272,12 @@ class AppTests(TestCase):
         fn = ValidBooleanFeature
         handle = self.app.boolean(fn)
         self.assertIsNotNone(handle)
-        self.assertEqual(self.app.features[fn.__name__], handle)
+        self.assertEqual(self.app.features[self.app._name(fn)], handle)
 
         with self.subTest("default annotation is set automatically"):
             default = handle.feature.definition.annotations["default"]
             self.assertEqual(len(default), 1)
-            self.assertEqual(default[0].fn, fn)
+            self.assertEqual(default[0].fn(), fn())
 
         with self.subTest("handle"):
             self.assertEqual(handle.create(), True)

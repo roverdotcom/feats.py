@@ -144,15 +144,24 @@ class DefinitionTests(TestCase):
         definition = Definition.from_function(fn)
         with self.subTest("impls"):
             impls = definition.implementations
-            self.assertEqual(len(impls), 1)
-            self.assertTrue(fn.__name__ in impls)
-            self.assertEqual(fn, impls[fn.__name__].fn)
+            self.assertEqual(["Enabled", "Default", "Disabled"], list(impls.keys()))
+            self.assertEqual(fn("test string"), impls["Default"].fn("test string"))
+            self.assertTrue(impls["Enabled"].fn("test string"))
+            self.assertFalse(impls["Disabled"].fn("test string"))
+
+            with self.subTest("args"):
+                impls = definition.implementations
+                for name, impl in impls.items():
+                    with self.subTest("Not Enough Args", name=name), self.assertRaises(TypeError):
+                        impl.fn()
+                    with self.subTest("Too Many Args", name=name), self.assertRaises(TypeError):
+                        impl.fn("a", "b")
 
         with self.subTest("annotations"):
             self.assertEqual(len(definition.annotations), 1)
             default = definition.annotations["default"]
             self.assertEqual(len(default), 1)
-            self.assertEqual(default[0].fn, fn)
+            self.assertEqual(default[0].fn("test string"), fn("test string"))
 
             with self.subTest("undeclared"):
                 self.assertEqual(len(definition.annotations["undeclared"]), 0)

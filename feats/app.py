@@ -195,7 +195,7 @@ class App:
         fn = self.default(fn)
         definition = Definition.from_function(fn)
         feature = Feature(definition)
-        name = fn.__name__
+        name = self._name(fn)
         handle = FeatureHandle(self, name, feature)
         self.features[name] = handle
 
