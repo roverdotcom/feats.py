@@ -1,3 +1,4 @@
+# flake8: noqa
 from .detail import Detail
 from .index import Index
 from .segmentation import ChangeMapping

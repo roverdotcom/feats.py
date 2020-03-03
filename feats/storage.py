@@ -19,6 +19,8 @@ The Memory storage keeps all data in memory. When the application exits, all dat
 will be lost.
 Mainly useful for testing environments.
 """
+
+
 class MemoryList(list):
     """
     This is an append-only list meant to store serialized feature states.

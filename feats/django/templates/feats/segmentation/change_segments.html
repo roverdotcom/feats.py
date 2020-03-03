@@ -1,19 +1,4 @@
 {% extends "feats/_template.html" %}
-{% block script %}
-<script>
-	function addRow(templateId, containerId, managementId) {
-		var totalForms = document.getElementById(managementId);
-		var template = document.getElementById(templateId);
-		var container = document.getElementById(containerId);
-		var newRow = document.createElement("div")
-		var formNumber = Number(totalForms.value)
-		newRow.className = "form-group"
-		newRow.innerHTML = template.innerHTML.replace(/__prefix__/g, formNumber);
-		container.append(newRow);
-		totalForms.value = formNumber + 1;
-	}
-</script>
-{% endblock %}
 {% block main %}
 <p>
 {{ feature.name }} can be segmented based on the input type '{{feature.feature.input_types|join:", "}}'.

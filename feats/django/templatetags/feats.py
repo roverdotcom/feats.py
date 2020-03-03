@@ -12,4 +12,3 @@ def selector_type(selector):
         return name
     else:
         raise ValueError("Selector '{}' has not been registered with the app".format(name))
-

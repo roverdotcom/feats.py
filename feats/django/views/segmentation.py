@@ -21,11 +21,26 @@ class FeatureSegmentFormset(BaseFormSet):
         return None
 
 
-def feature_segment_formset(feature_handle, data=None):
+def feature_segment_formset(feature_handle, state=None, data=None):
     class FormsetForm(FeatureSegmentForm):
         def __init__(self, *args, **kwargs):
             super().__init__(feature_handle, *args, **kwargs)
-    return formset_factory(FormsetForm, formset=FeatureSegmentFormset)(
+    initial = None
+    extra = 1
+    if state is not None:
+        initial = []
+        for segment in state.segments:
+            extra = 0
+            initial.append({
+                'segment': segment.name,
+            })
+
+    return formset_factory(
+        FormsetForm,
+        formset=FeatureSegmentFormset,
+        extra=extra,
+    )(
+        initial=initial,
         data=data,
         prefix='segment'
     )
@@ -48,7 +63,10 @@ class FeatureSegmentForm(base.Form):
 
 
 class SelectorMappingFormset(BaseFormSet):
-    pass
+    def __init__(self, data=None, prefix=None, *args, **kwargs):
+        if data is not None:
+            data = base.compress_formsets(data, prefix)
+        super().__init__(*args, **kwargs, data=data, prefix=prefix)
 
 
 def selector_mapping_formset(segments, state, data=None):
@@ -56,8 +74,27 @@ def selector_mapping_formset(segments, state, data=None):
         def __init__(self, *args, **kwargs):
             super().__init__(segments, state.selectors, *args, **kwargs)
 
-    return formset_factory(FormsetForm, formset=SelectorMappingFormset)(
+    initial = None
+    extra = 1
+    if state is not None:
+        initial = []
+        for values, selector in state.selector_mapping.items():
+            extra = 0
+            segment_values = {}
+            for segment, value in zip(state.segments, values):
+                segment_values['segment[{}]'.format(segment.name)] = value
+            initial.append({
+                'segment': segment.name,
+                **segment_values,
+            })
+
+    return formset_factory(
+        FormsetForm,
+        formset=SelectorMappingFormset,
+        extra=extra
+    )(
         data=data,
+        initial=initial,
         prefix='selector-mapping'
     )
 
@@ -133,7 +170,6 @@ class ChangeMapping(base.TemplateView):
                     selector_mapping={},
                     created_by=self.request.user.username
             )
-
         mapping_formset = self.get_mapping_formset(segments, state, request.POST)
         if mapping_formset.is_valid():
             selector_mapping = dict(
@@ -173,8 +209,8 @@ class ChangeSegmentation(base.TemplateView):
     def feature(self):
         return self.feats_app.features[self.args[0]]
 
-    def get_formset(self, feature):
-        return feature_segment_formset(feature)
+    def get_formset(self, feature, state):
+        return feature_segment_formset(feature, state=state)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -187,7 +223,7 @@ class ChangeSegmentation(base.TemplateView):
                     selector_mapping={},
                     created_by=self.request.user.username
             )
-        segment_formset = self.get_formset(feature)
+        segment_formset = self.get_formset(feature, state)
         context['formset'] = segment_formset
         context['feature'] = feature
         return context

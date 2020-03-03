@@ -202,6 +202,7 @@ def ValidBooleanFeature() -> bool:
 def InvalidBooleanFeatureNoReturnType():
     return True
 
+
 def InvalidBooleanFeatureBadReturnType() -> str:
     return "True"
 

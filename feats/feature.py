@@ -56,4 +56,3 @@ class Feature:
     @property
     def implementations(self):
         return self.definition.implementations
-
