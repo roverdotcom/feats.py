@@ -34,7 +34,7 @@ class FeatureState:
                 raise ValueError(f"{selector.name} was mapped, but not included in the set of selectors for this feature")
 
     def find_selector(self, *args) -> Optional[Selector]:
-        segment_values = tuple([segment(*args) for segment in self.segments])
+        segment_values = tuple([segment.segment(*args) for segment in self.segments])
         return self.selector_mapping.get(segment_values, self.selector_mapping.get(None))
 
     def add_selector(self, selector: Selector, created_by: str) -> 'FeatureState':

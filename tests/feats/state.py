@@ -7,8 +7,67 @@ import feats.errors as errors
 from feats.app import App
 from feats.selector import Rollout
 from feats.selector import Static
+from feats.meta import Definition
+from feats.segment import Segment
 from feats.storage import Memory
 from feats.state import FeatureState
+
+class ToStrSegment:
+    def val(self, s: str) -> str:
+        return s
+
+
+class LenSegment:
+    def val(self, s: str) -> str:
+        return str(len(s))
+
+
+class FirstWordSegment:
+    def val(self, s: str) -> str:
+        return s.split(' ', 1)[0]
+
+class FindSelectorTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.segment = Segment('tostr', Definition.from_object(ToStrSegment()))
+        self.len_segment = Segment('len', Definition.from_object(LenSegment()))
+        self.word_segment = Segment('word', Definition.from_object(FirstWordSegment()))
+
+        self.foo_selector = Static('Foo', 'foo')
+        self.bar_selector = Static('Bar', 'bar')
+
+    def test_find_selector_default(self):
+        with self.subTest("Nothing registered"):
+            state = FeatureState(segments=[], selectors=[], selector_mapping={}, created_by='test')
+            self.assertIsNone(state.find_selector())
+
+        with self.subTest("Unmapped"):
+            state = FeatureState(
+                    segments=[self.segment],
+                    selectors=[self.foo_selector],
+                    selector_mapping={('mapped',): self.foo_selector},
+                    created_by='test',
+            )
+            self.assertIsNone(state.find_selector('unmapped'))
+
+    def test_find_selector_has_fallback(self):
+        with self.subTest("Should return fallback"):
+            state = FeatureState(
+                    segments=[self.segment],
+                    selectors=[self.foo_selector],
+                    selector_mapping={None: self.foo_selector},
+                    created_by='test'
+            )
+            self.assertEqual(self.foo_selector, state.find_selector('unmapped'))
+        with self.subTest("Should return mapped"):
+            state = FeatureState(
+                    segments=[self.segment],
+                    selectors=[self.foo_selector, self.bar_selector],
+                    selector_mapping={None: self.foo_selector, ('mapped',): self.bar_selector},
+                    created_by='test',
+            )
+            self.assertEqual(self.bar_selector, state.find_selector('mapped'))
 
 
 class FeatureStateBuilderTests(TestCase):
