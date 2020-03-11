@@ -1,9 +1,20 @@
 import json
+from typing import Optional
+from .selector import Selector
 from .errors import InvalidSerializerVersion
 
 
 class FeatureState:
     version = 'v1'
+
+    @classmethod
+    def initial(cls, created_by):
+        return cls(
+                segments=[],
+                selectors=[],
+                selector_mapping={},
+                created_by=created_by
+        )
 
     def __init__(self,
                  segments,
@@ -18,13 +29,59 @@ class FeatureState:
         self.selectors = selectors
         self.selector_mapping = selector_mapping
         self.created_by = created_by
+        for selector in self.selector_mapping.values():
+            if selector not in self.selectors:
+                raise ValueError(f"{selector.name} was mapped, but not included in the set of selectors for this feature")
 
-    def select_implementation(self, *args) -> str:
+    def find_selector(self, *args) -> Optional[Selector]:
         segment_values = tuple([segment(*args) for segment in self.segments])
-        selector = self.selector_mapping.get(segment_values, self.selector_mapping.get(None))
-        if selector is None:
-            return None
-        return selector.select(*args)
+        return self.selector_mapping.get(segment_values, self.selector_mapping.get(None))
+
+    def add_selector(self, selector: Selector, created_by: str) -> 'FeatureState':
+        selectors = self.selectors.copy()
+        selector_mapping = self.selector_mapping.copy()
+        segments = self.segments.copy()
+        selectors.append(selector)
+
+        return FeatureState(
+                segments,
+                selectors,
+                selector_mapping,
+                created_by,
+        )
+
+    def update_selector(self, index: int, selector: Selector, created_by: str) -> 'FeatureState':
+        selectors = self.selectors.copy()
+        selector_mapping = self.selector_mapping.copy()
+        segments = self.segments.copy()
+        current_selector = selectors[index]
+
+        mapped_to = [key for key, value in selector_mapping.items() if value == current_selector]
+        for key in mapped_to:
+            selector_mapping[key] = selector
+        selectors[index] = selector
+
+        return FeatureState(
+                segments,
+                selectors,
+                selector_mapping,
+                created_by,
+        )
+
+    def remove_selector(self, index: int, created_by: str) -> 'FeatureState':
+        removed = self.selectors[index]
+
+        selectors = self.selectors[:index] + self.selectors[index+1:]
+        segments = self.segments.copy()
+
+        selector_mapping = { key: value for key, value in self.selector_mapping.items() if value != removed }
+        return FeatureState(
+                segments,
+                selectors,
+                selector_mapping,
+                created_by,
+        )
+
 
     def serialize(self, app) -> dict:
         """

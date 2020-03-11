@@ -73,11 +73,9 @@ class Definition:
             fn(*args, **kwargs)
             return False
 
-        annotations = defaultdict(list)
         default = Implementation(Default)
-        if hasattr(fn, '_feats_annotations_'):
-            for annotation in fn._feats_annotations_:
-                annotations[annotation].append(default)
+        annotations = defaultdict(list)
+        annotations['default'] = [default]
 
         implementations = [
             Implementation(Enabled),

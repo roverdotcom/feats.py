@@ -145,14 +145,10 @@ class ChangeMapping(base.TemplateView):
     def get_context_data(self):
         context = super().get_context_data()
         feature = self.feature
-        state = feature.get_current_state()
+        state = feature.state
         if state is None:
-            state = FeatureState(
-                segments=[],
-                selectors=[],
-                selector_mapping={},
-                created_by=self.request.user.username
-            )
+            state = FeatureState.initial(self.request.user.username)
+
         segments = self.get_segment_formset(feature).validate_and_get_segments(self.feats_app)
         context['feature'] = feature
         context['segment_names'] = [segment.name for segment in segments]
@@ -161,15 +157,11 @@ class ChangeMapping(base.TemplateView):
 
     def post(self, request, *args, **kwargs):
         feature = self.feature
-        state = feature.get_current_state()
+        state = feature.state
         segments = self.get_segment_formset(feature).validate_and_get_segments(self.feats_app)
         if state is None:
-            state = FeatureState(
-                    segments=[],
-                    selectors=[],
-                    selector_mapping={},
-                    created_by=self.request.user.username
-            )
+            state = FeatureState.initial(self.request.user.username)
+
         mapping_formset = self.get_mapping_formset(segments, state, request.POST)
         if mapping_formset.is_valid():
             selector_mapping = dict(
@@ -181,7 +173,7 @@ class ChangeMapping(base.TemplateView):
                     selector_mapping=selector_mapping,
                     created_by=self.request.user.username
             )
-            self.feature.set_state(state)
+            self.feature.state = state
             return HttpResponseRedirect(
                 reverse('feats:detail', args=self.args)
             )
@@ -215,13 +207,10 @@ class ChangeSegmentation(base.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         feature = self.feature
-        state = feature.get_current_state()
+        state = feature.state
         if state is None:
-            state = FeatureState(
-                    segments=[],
-                    selectors=[],
-                    selector_mapping={},
-                    created_by=self.request.user.username
+            state = FeatureState.initial(
+                    self.request.user.username
             )
         segment_formset = self.get_formset(feature, state)
         context['formset'] = segment_formset

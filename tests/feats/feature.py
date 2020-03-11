@@ -3,6 +3,8 @@ from unittest import TestCase
 import feats
 from feats.app import App
 from feats.storage import Memory
+from feats.selector import Static
+from feats.state import FeatureState
 
 
 class InvalidUnaryFeatures:
@@ -199,6 +201,10 @@ def ValidBooleanFeature() -> bool:
     return True
 
 
+def ValidUnaryBooleanFeature(arg: str) -> bool:
+    return False
+
+
 def InvalidBooleanFeatureNoReturnType():
     return True
 
@@ -280,7 +286,7 @@ class AppTests(TestCase):
             self.assertEqual(default[0].fn(), fn())
 
         with self.subTest("handle"):
-            self.assertEqual(handle.create(), True)
+            self.assertTrue(handle.is_enabled())
 
     def test_invalid_boolean_features(self):
         fns = [

@@ -11,7 +11,7 @@ class Detail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         feature = self.feature
-        state = feature.get_current_state()
+        state = feature.state
         context['feature'] = feature
         context['state'] = state
         if state:
