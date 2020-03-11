@@ -105,20 +105,9 @@ class RolloutSelectorForm(WeightedSelectorForm):
 
 class ExperimentSelectorForm(WeightedSelectorForm):
     def __init__(self, feature_handle, selector=None, initial=None, *args, **kwargs):
-        if selector is not None:
-            initial = initial or {}
-            initial['segment'] = selector.segment.name
-
         super().__init__(feature_handle, 'experiment', selector, initial, *args, **kwargs)
-        self.fields['segment'] = base.ChoiceField(
-            choices=[
-                (name, name) for name in feature_handle.valid_segments().keys()
-            ],
-            required=True,
-        )
 
     def create_selector(self):
-        segment = self.cleaned_data['segment']
         name = self.cleaned_data['name']
         weights = self.get_weights()
 
@@ -128,7 +117,6 @@ class ExperimentSelectorForm(WeightedSelectorForm):
                 # Needs App support for registering persisters
                 'persister': "# TODO:",
                 'weights': weights,
-                'segment': segment
             }
         )
 

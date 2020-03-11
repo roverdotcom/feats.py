@@ -193,19 +193,16 @@ class Experiment(Selector):
     def __init__(
             self,
             name: str,
-            segment: Segment,
             persister: ExperimentPersister,
             weights: Weights
     ):
         super().__init__(name)
-        self.segment = segment
         self.persister = persister
         self.population = list(weights.keys())
         self.weights = list(weights.values())
 
     def select(self, value: object) -> str:
-        key = self.segment.segment(value)
-        existing_group = self.persister.get_existing_test_group(key)
+        existing_group = self.persister.get_existing_test_group(value)
         if existing_group is not None:
             return existing_group
 
@@ -219,7 +216,6 @@ class Experiment(Selector):
     def from_data(cls, app, configuration):
         return cls(
             name=configuration['name'],
-            segment=app.get_segment(configuration['segment']),
             persister=app.get_persister(configuration['persister']),
             weights=configuration['weights'],
         )
@@ -227,7 +223,6 @@ class Experiment(Selector):
     def serialize_data(self, app):
         return {
             'name': self.name,
-            'segment': self.segment.name,
             'persister': app._name(self.persister),
             'weights': self.weights,
         }
