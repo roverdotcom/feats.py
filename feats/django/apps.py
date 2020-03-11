@@ -2,6 +2,7 @@ from django.apps import AppConfig
 from django.core.exceptions import ImproperlyConfigured, AppRegistryNotReady
 from django.conf import settings
 from feats import App
+from importlib import import_module
 
 
 class FeatsConfig(AppConfig):
@@ -24,6 +25,13 @@ class FeatsConfig(AppConfig):
                 type(feats_app)
             )
         self._feats_app = feats_app
+        # Register other feats files in other django apps
+        for app in self.apps.get_app_configs():
+            try:
+                import_module('.feats', app.name)
+            except ModuleNotFoundError:
+                # Not all apps need to have feats
+                pass
 
     @property
     def feats_app(self):
