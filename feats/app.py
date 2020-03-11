@@ -18,33 +18,23 @@ class FeatureHandle:
         self.name = name
         self.feature = feature
 
-    def find(self, *args) -> str:
+    def find_selector(self, *args) -> Selector:
+        state = self.state
+        if state is not None:
+            selector = state.find_selector(*args)
+            return selector
+        return Default(self.feature)
+
+    def find_implementation(self, *args) -> str:
         """
         Returns the name of the implementation to use for the argument(s).
         """
-        state = self.get_current_state()
-        name = None
-        if state is not None:
-            name = state.select_implementation(*args)
+        selector = self.find_selector(*args)
+        return selector.select(*args)
 
-        if name is None:
-            name = self.feature.default_implementation.name
-
-        return name
-
-    def create(self, *args) -> object:
-        """
-        Returns the appropriate implementation to use for the argument(s).
-
-        The implementation is found using any configured segmentations and
-        selectors for the feature.
-        """
-        impl_name = self.find(*args)
-        return self.feature.implementations[impl_name].fn(*args)
-
-    def set_state(self, new_state: FeatureState):
-        serialized_state = copy.deepcopy(new_state.serialize(self.app))
-        self.app.storage[self.name].append(serialized_state)
+    def used_implementation(self, impl: str, *args):
+        selector = self.find_selector(*args)
+        selector.used_implementation(impl, *args)
 
     @property
     def state(self) -> Optional[FeatureState]:
@@ -63,13 +53,12 @@ class FeatureHandle:
 
     def valid_segments(self):
         """
-        Find the segments which can take the same inputs as the given class
+        Returns the segments which can take the same inputs as this feature
         """
         input_type = None
-        if len(self.feature.input_types) == 0:
+        if len(self.feature.input_types) != 1:
             return {}
-        elif len(self.feature.input_types) > 1:
-            return {}
+
         input_type = self.feature.input_types[0]
         found = {}
         for name, segment in self.app.segments.items():
@@ -117,7 +106,7 @@ class App:
         self.storage = storage
 
         for cls in [Experiment, Rollout, Static]:
-            self.register_selector(cls)
+            self.selectors[self._name(cls)] = cls
 
     def _name(self, cls):
         """
@@ -133,13 +122,6 @@ class App:
             name = '.'.join((module, name))
         return name
 
-    def register_selector(self, cls):
-        """
-        A method for registering Selectors by module name with the app for
-        serializing/deserializing
-        """
-        self.selectors[self._name(cls)] = cls
-
     def get_selector(self, class_name):
         if class_name not in self.selectors:
             raise UnknownSelectorName(class_name)
@@ -154,7 +136,16 @@ class App:
             raise UnknownSegmentName(segment_name)
         return segment
 
-    def feature(self, cls):
+    def get_applicable_features(self, input_types: List[Type]) -> List[FeatureHandle]:
+        """
+        Returns the registered features which require values of the given input types.
+        """
+        return [
+                handle for handle in self.features
+                if handle.feature.input_types == input_types
+        ]
+
+    def feature(self, cls) -> FeatureFactory:
         """
         # TODO: Clearer docs
         Initializes the wrapped class and returns a handle to the registered

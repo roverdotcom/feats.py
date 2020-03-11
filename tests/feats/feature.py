@@ -298,3 +298,10 @@ class AppTests(TestCase):
         for fn in fns:
             with self.subTest(fn), self.assertRaises(ValueError):
                 self.app.boolean(fn)
+
+    def test_used_implementation(self):
+        feature = self.app.boolean(ValidBooleanFeature)
+        with self.subTest("no state"):
+            feature.used_implementation("True")
+
+

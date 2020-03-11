@@ -198,6 +198,24 @@ class ConfirmText:
         return "Persist"
 ```
 
+## Preselecting Implementations
+
+When dealing with client-side applications, it can be beneficial for the client to poll ahead-of-time the implementation
+to use, without actually marking a user as "bucketed" for experiments. The client can then asyncronously notify the server
+that the client has used that implementation to persist that data. This removes the network latency required to display a feature
+at the cost of some additional latency between the time a feature is updated and the client sees that update.
+
+In order to do this, we can combine the Application's `peek_implementations` method to preselect implementations, alongside an individual Feature's
+`used_implementation` method to notify that the client has used a certain implementation.
+
+```python
+implementations: Dict[str, str] = app.peek_implementations(user) # Returns mapping from name of feature to name of implementation
+```
+
+```python
+app.features[name].used_implementation(impl_name, user)
+```
+
 # Configuration
 
 # Examples
