@@ -141,7 +141,7 @@ class App:
         Returns the registered features which require values of the given input types.
         """
         return [
-                handle for handle in self.features
+                handle for handle in self.features.values()
                 if handle.feature.input_types == input_types
         ]
 
