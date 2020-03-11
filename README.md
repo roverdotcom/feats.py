@@ -205,15 +205,17 @@ to use, without actually marking a user as "bucketed" for experiments. The clien
 that the client has used that implementation to persist that data. This removes the network latency required to display a feature
 at the cost of some additional latency between the time a feature is updated and the client sees that update.
 
-In order to do this, we can combine the Application's `peek_implementations` method to preselect implementations, alongside an individual Feature's
+In order to do this, we can combine the Feature's `find_implementation` method to preselect implementations, alongside that Feature's
 `used_implementation` method to notify that the client has used a certain implementation.
 
+For Features using an experiment, `find_implementation` will return a random implementation until that user has used an implementation. Calling a feature's `create` or `is_enabled` method will mark that user as having used the implementation returned.
+
 ```python
-implementations: Dict[str, str] = app.peek_implementations(user) # Returns mapping from name of feature to name of implementation
+impl_name = MyFeature.find_implementation(user) # Returns mapping from name of feature to name of implementation
 ```
 
 ```python
-app.features[name].used_implementation(impl_name, user)
+MyFeature.used_implementation(impl_name, user)
 ```
 
 # Configuration
