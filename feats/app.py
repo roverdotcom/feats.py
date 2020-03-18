@@ -180,6 +180,14 @@ class App:
         self.features[name] = handle
         return handle
 
+    def persister(self, cls: Type[ExperimentPersister]) -> Type[ExperimentPersister]:
+        """
+        Registers an experiment persister with this App.
+        This persister will be used for any Feature with the same input type
+        as the persister.
+        """
+        self.persisters[self._name(cls)] = cls
+
     def default(self, fn):
         """
         Annotates the given function as the default implementation of the feature.

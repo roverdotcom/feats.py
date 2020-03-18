@@ -151,16 +151,20 @@ class Rollout(Selector):
             'weights': self.weights,
         }
 
+T = TypeVar('T')
 
-class ExperimentPersister(metaclass=abc.ABCMeta):
+class ExperimentPersister(Generic[T], metaclass=abc.ABCMeta):
+    def __init__(self, experiment_name):
+        self.experiment_name = experiment_name
+
     @abc.abstractmethod
-    def get_existing_test_group(self, obj: object) -> str:
+    def get_existing_test_group(self, obj: T) -> str:
         """
         Returns the previously persisted group for the object.
         """
 
     @abc.abstractmethod
-    def persist_test_group(self, obj: object, group: str) -> str:
+    def persist_test_group(self, obj: T, group: str) -> str:
         """
         Associates the provided test group to the specified object so that
         future checks return the group the object was already bucketed in.
@@ -193,11 +197,11 @@ class Experiment(Selector):
     def __init__(
             self,
             name: str,
-            persister: ExperimentPersister,
+            persister: Type[ExperimentPersister],
             weights: Weights
     ):
         super().__init__(name)
-        self.persister = persister
+        self.persister = persister(name)
         self.population = list(weights.keys())
         self.weights = list(weights.values())
 
@@ -216,7 +220,7 @@ class Experiment(Selector):
     def from_data(cls, app, configuration):
         return cls(
             name=configuration['name'],
-            persister=app.get_persister(configuration['persister']),
+            persister=app.persisters[configuration['persister']],
             weights=configuration['weights'],
         )
 
