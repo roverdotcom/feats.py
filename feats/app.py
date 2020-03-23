@@ -189,7 +189,7 @@ class App:
     def boolean(self, fn) -> FeatureConditional:
         """
         Similar to `feature` but operates on a boolean function.
-        wrapped function and returns a handle to the registered boolean
+        Wraps the function and returns a handle to the registered boolean
         feature.
 
         Example:
