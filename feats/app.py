@@ -20,10 +20,9 @@ class FeatureHandle:
 
     def find_selector(self, *args) -> Selector:
         state = self.state
-        if state is not None:
-            selector = state.find_selector(*args)
-            return selector
-        return Default(self.feature)
+        if state is None:
+            return Default(self.feature)
+        return state.find_selector(*args)
 
     def find_implementation(self, *args) -> str:
         """
