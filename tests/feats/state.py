@@ -1,12 +1,204 @@
 import json
 
 from unittest import TestCase
+from collections import namedtuple
 
 import feats.errors as errors
 from feats.app import App
 from feats.selector import Rollout
+from feats.selector import Static
+from feats.meta import Definition
+from feats.segment import Segment
 from feats.storage import Memory
 from feats.state import FeatureState
+
+class ToStrSegment:
+    def val(self, s: str) -> str:
+        return s
+
+
+class LenSegment:
+    def val(self, s: str) -> str:
+        return str(len(s))
+
+
+class FirstWordSegment:
+    def val(self, s: str) -> str:
+        return s.split(' ', 1)[0]
+
+class FindSelectorTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.segment = Segment('tostr', Definition.from_object(ToStrSegment()))
+        self.len_segment = Segment('len', Definition.from_object(LenSegment()))
+        self.word_segment = Segment('word', Definition.from_object(FirstWordSegment()))
+
+        self.foo_selector = Static('Foo', 'foo')
+        self.bar_selector = Static('Bar', 'bar')
+
+    def test_find_selector_default(self):
+        with self.subTest("Nothing registered"):
+            state = FeatureState(segments=[], selectors=[], selector_mapping={}, created_by='test')
+            self.assertIsNone(state.find_selector())
+
+        with self.subTest("Unmapped"):
+            state = FeatureState(
+                    segments=[self.segment],
+                    selectors=[self.foo_selector],
+                    selector_mapping={('mapped',): self.foo_selector},
+                    created_by='test',
+            )
+            self.assertIsNone(state.find_selector('unmapped'))
+
+    def test_find_selector_has_fallback(self):
+        with self.subTest("Should return fallback"):
+            state = FeatureState(
+                    segments=[self.segment],
+                    selectors=[self.foo_selector],
+                    selector_mapping={None: self.foo_selector},
+                    created_by='test'
+            )
+            self.assertEqual(self.foo_selector, state.find_selector('unmapped'))
+        with self.subTest("Should return mapped"):
+            state = FeatureState(
+                    segments=[self.segment],
+                    selectors=[self.foo_selector, self.bar_selector],
+                    selector_mapping={None: self.foo_selector, ('mapped',): self.bar_selector},
+                    created_by='test',
+            )
+            self.assertEqual(self.bar_selector, state.find_selector('mapped'))
+
+
+class FeatureStateBuilderTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.initial = FeatureState.initial('sentinel')
+
+    def test_initial(self):
+        self.assertEqual([], self.initial.segments)
+        self.assertEqual([], self.initial.selectors)
+        self.assertEqual({}, self.initial.selector_mapping)
+        self.assertEqual('sentinel', self.initial.created_by)
+
+    def test_add_selector(self):
+        selector = Static('new_selector', 'sentinel')
+        other_selector = Static('other_selector', 'sentinel')
+        tests = [
+            (self.initial, [selector]),
+            (FeatureState(
+                segments=[],
+                selectors=[other_selector],
+                selector_mapping={None: other_selector},
+                created_by='test'
+            ),
+            [other_selector, selector]),
+        ]
+
+        for initial, expected in tests:
+            with self.subTest():
+                new_state = initial.add_selector(selector, 'test')
+                self.assertEqual(new_state.selectors, expected)
+                self.assertEqual(new_state.selector_mapping, initial.selector_mapping)
+                self.assertEqual(new_state.segments, initial.segments)
+                self.assertEqual(new_state.created_by, 'test')
+
+    def test_remove_selector(self):
+        selector_to_remove = Static('to_remove', 'sentinel')
+        other_selector = Static('other_selector', 'other')
+
+        tests = [
+                (
+                    [selector_to_remove],
+                    {},
+                    0,
+                    [],
+                    {},
+                ),
+                (
+                    [selector_to_remove],
+                    {None: selector_to_remove},
+                    0,
+                    [],
+                    {}
+                ),
+                (
+                    [other_selector, selector_to_remove],
+                    {None: other_selector},
+                    1,
+                    [other_selector],
+                    {None: other_selector},
+                ),
+                (
+                    [other_selector, selector_to_remove],
+                    {None: other_selector},
+                    1,
+                    [other_selector],
+                    {None: other_selector},
+                )
+        ]
+        for initial_selector, initial_map, index, expected_selectors, expected_map in tests:
+            with self.subTest():
+                initial_state = FeatureState(
+                        segments=[],
+                        selectors=initial_selector.copy(),
+                        selector_mapping=initial_map.copy(),
+                        created_by='test'
+                )
+                new_state = initial_state.remove_selector(index, 'test2')
+                self.assertEqual(new_state.segments, [])
+                self.assertEqual(new_state.selectors, expected_selectors)
+                self.assertEqual(new_state.selector_mapping, expected_map)
+                self.assertEqual(new_state.created_by, 'test2')
+
+    def test_update_selector(self):
+        selector_to_update = Static('to_update', 'sentinel')
+        updated_selector = Static('updated_selector', 'updated')
+        other_selector = Static('other_selector', 'other')
+        tests = [
+                (
+                    [selector_to_update],
+                    {},
+                    0,
+                    [updated_selector],
+                    {},
+                ),
+                (
+                    [selector_to_update],
+                    {None: selector_to_update},
+                    0,
+                    [updated_selector],
+                    {None: updated_selector}
+                ),
+                (
+                    [other_selector, selector_to_update],
+                    {None: other_selector},
+                    1,
+                    [other_selector, updated_selector],
+                    {None: other_selector},
+                ),
+                (
+                    [other_selector, selector_to_update],
+                    {None: other_selector, ('a',): selector_to_update, ('b',): selector_to_update},
+                    1,
+                    [other_selector, updated_selector],
+                    {None: other_selector, ('a',): updated_selector, ('b',): updated_selector},
+                )
+        ]
+        for initial_selector, initial_map, index, expected_selectors, expected_map in tests:
+            with self.subTest():
+                initial_state = FeatureState(
+                        segments=[],
+                        selectors=initial_selector.copy(),
+                        selector_mapping=initial_map.copy(),
+                        created_by='test'
+                )
+                new_state = initial_state.update_selector(index, updated_selector, 'test2')
+                self.assertEqual(new_state.segments, [])
+                self.assertEqual(new_state.selectors, expected_selectors)
+                self.assertEqual(new_state.selector_mapping, expected_map)
+                self.assertEqual(new_state.created_by, 'test2')
 
 
 class SerializeStateTests(TestCase):

@@ -105,20 +105,9 @@ class RolloutSelectorForm(WeightedSelectorForm):
 
 class ExperimentSelectorForm(WeightedSelectorForm):
     def __init__(self, feature_handle, selector=None, initial=None, *args, **kwargs):
-        if selector is not None:
-            initial = initial or {}
-            initial['segment'] = selector.segment.name
-
         super().__init__(feature_handle, 'experiment', selector, initial, *args, **kwargs)
-        self.fields['segment'] = base.ChoiceField(
-            choices=[
-                (name, name) for name in feature_handle.valid_segments().keys()
-            ],
-            required=True,
-        )
 
     def create_selector(self):
-        segment = self.cleaned_data['segment']
         name = self.cleaned_data['name']
         weights = self.get_weights()
 
@@ -128,7 +117,6 @@ class ExperimentSelectorForm(WeightedSelectorForm):
                 # Needs App support for registering persisters
                 'persister': "# TODO:",
                 'weights': weights,
-                'segment': segment
             }
         )
 
@@ -188,22 +176,15 @@ class AddSelector(base.TemplateView):
         if bound_form.is_valid():
             feature = self.feature
             selector = form.create_selector()
-            state = feature.get_current_state()
+            state = feature.state
             if state is None:
-                state = FeatureState(
-                    segments=[],
-                    selectors=[selector],
-                    selector_mapping={},
-                    created_by=self.request.user.username
-                )
-            else:
-                state = FeatureState(
-                    segments=state.segments,
-                    selectors=state.selectors + [selector],
-                    selector_mapping=state.selector_mapping,
-                    created_by=self.request.user.username
-                )
-            self.feature.set_state(state)
+                state = FeatureState.initial(self.request.user.username)
+
+            state = state.add_selector(
+                selector,
+                created_by=self.request.user.username
+            )
+            self.feature.state = state
             return HttpResponseRedirect(
                 reverse('feats:detail', args=self.args)
             )
@@ -233,7 +214,7 @@ class ChangeSelector(base.TemplateView):
 
     @cached_property
     def state(self):
-        state = self.feature.get_current_state()
+        state = self.feature.state
         if state is None:
             raise Http404()
         return state
@@ -253,15 +234,12 @@ class ChangeSelector(base.TemplateView):
         form = self.form(self.feature, data=request.POST, selector=self.selector)
         if form.is_valid():
             if form.has_changed():
-                selectors = self.state.selectors.copy()
-                selectors[self.selector_idx] = form.create_selector()
-                state = FeatureState(
-                        segments=self.state.segments,
-                        selectors=selectors,
-                        selector_mapping=self.state.selector_mapping,
+                state = self.state.update_selector(
+                        self.selector_idx,
+                        form.create_selector(),
                         created_by=self.request.user.username,
                 )
-                self.feature.set_state(state)
+                self.feature.state = state
             return HttpResponseRedirect(
                 reverse('feats:detail', args=self.args[:1])
             )

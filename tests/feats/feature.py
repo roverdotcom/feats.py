@@ -3,6 +3,8 @@ from unittest import TestCase
 import feats
 from feats.app import App
 from feats.storage import Memory
+from feats.selector import Static
+from feats.state import FeatureState
 
 
 class InvalidUnaryFeatures:
@@ -199,6 +201,10 @@ def ValidBooleanFeature() -> bool:
     return True
 
 
+def ValidUnaryBooleanFeature(arg: str) -> bool:
+    return False
+
+
 def InvalidBooleanFeatureNoReturnType():
     return True
 
@@ -211,7 +217,7 @@ def InvalidBooleanFeatureNoInputType(arg) -> bool:
     return True
 
 
-class AppTests(TestCase):
+class AppDefinitionTests(TestCase):
     def setUp(self):
         super().setUp()
         self.app = App(storage=Memory())
@@ -280,7 +286,7 @@ class AppTests(TestCase):
             self.assertEqual(default[0].fn(), fn())
 
         with self.subTest("handle"):
-            self.assertEqual(handle.create(), True)
+            self.assertTrue(handle.is_enabled())
 
     def test_invalid_boolean_features(self):
         fns = [
@@ -292,3 +298,24 @@ class AppTests(TestCase):
         for fn in fns:
             with self.subTest(fn), self.assertRaises(ValueError):
                 self.app.boolean(fn)
+
+
+class GetApplicableFeaturesTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.app = App(storage=Memory())
+
+    def test_no_applicable_features(self):
+        with self.subTest("No Registered Features"):
+            self.assertEqual([], self.app.get_applicable_features([int]))
+
+        with self.subTest("Registered Features"):
+            self.app.feature(ValidUnaryFeatures.One)
+            self.assertEqual([], self.app.get_applicable_features([int]))
+
+    def test_applicable_features(self):
+        one = self.app.feature(ValidUnaryFeatures.One)
+        two = self.app.feature(ValidUnaryFeatures.Two)
+        three = self.app.feature(ValidUnaryFeatures.Three)
+
+        self.assertEqual([one, two, three], self.app.get_applicable_features([str]))

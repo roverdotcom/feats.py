@@ -1,5 +1,5 @@
 import inspect
-from typing import Dict
+from typing import Dict, List, Optional, Type
 import copy
 
 from .storage import Storage
@@ -8,7 +8,7 @@ from .feature import Feature
 from .feature import default
 from .meta import Definition
 from .segment import Segment
-from .selector import Experiment, Rollout, Selector, Static
+from .selector import Experiment, Rollout, Selector, Static, Default
 from .state import FeatureState
 
 
@@ -18,35 +18,25 @@ class FeatureHandle:
         self.name = name
         self.feature = feature
 
-    def find(self, *args) -> str:
+    def find_selector(self, *args) -> Selector:
+        state = self.state
+        if state is None:
+            return Default(self.feature)
+        return state.find_selector(*args)
+
+    def find_implementation(self, *args) -> str:
         """
         Returns the name of the implementation to use for the argument(s).
         """
-        state = self.get_current_state()
-        name = None
-        if state is not None:
-            name = state.select_implementation(*args)
+        selector = self.find_selector(*args)
+        return selector.select(*args)
 
-        if name is None:
-            name = self.feature.default_implementation.name
+    def used_implementation(self, impl: str, *args):
+        selector = self.find_selector(*args)
+        selector.used_implementation(impl, *args)
 
-        return name
-
-    def create(self, *args) -> object:
-        """
-        Returns the appropriate implementation to use for the argument(s).
-
-        The implementation is found using any configured segmentations and
-        selectors for the feature.
-        """
-        impl_name = self.find(*args)
-        return self.feature.implementations[impl_name].fn(*args)
-
-    def set_state(self, new_state: FeatureState):
-        serialized_state = copy.deepcopy(new_state.serialize(self.app))
-        self.app.storage[self.name].append(serialized_state)
-
-    def get_current_state(self) -> FeatureState:
+    @property
+    def state(self) -> Optional[FeatureState]:
         states = self.app.storage[self.name]
         try:
             state_data = states.last()
@@ -55,15 +45,19 @@ class FeatureHandle:
 
         return FeatureState.deserialize(self.app, state_data)
 
+    @state.setter
+    def state(self, new_state: FeatureState):
+        serialized_state = copy.deepcopy(new_state.serialize(self.app))
+        self.app.storage[self.name].append(serialized_state)
+
     def valid_segments(self):
         """
-        Find the segments which can take the same inputs as the given class
+        Returns the segments which can take the same inputs as this feature
         """
         input_type = None
-        if len(self.feature.input_types) == 0:
+        if len(self.feature.input_types) != 1:
             return {}
-        elif len(self.feature.input_types) > 1:
-            return {}
+
         input_type = self.feature.input_types[0]
         found = {}
         for name, segment in self.app.segments.items():
@@ -71,6 +65,28 @@ class FeatureHandle:
             if impl is not None:
                 found[name] = segment
         return found
+
+
+class FeatureFactory(FeatureHandle):
+    def create(self, *args) -> object:
+        """
+        Returns the appropriate implementation to use for the argument(s).
+
+        The implementation is found using any configured segmentations and
+        selectors for the feature.
+        """
+        selector = self.find_selector(*args)
+        name = selector.select(*args)
+        selector.used_implementation(name, *args)
+        return self.feature.implementations[name].fn(*args)
+
+
+class FeatureConditional(FeatureHandle):
+    def is_enabled(self, *args) -> bool:
+        selector = self.find_selector(*args)
+        name = selector.select(*args)
+        selector.used_implementation(name, *args)
+        return bool(self.feature.implementations[name].fn(*args))
 
 
 class App:
@@ -89,7 +105,7 @@ class App:
         self.storage = storage
 
         for cls in [Experiment, Rollout, Static]:
-            self.register_selector(cls)
+            self.selectors[self._name(cls)] = cls
 
     def _name(self, cls):
         """
@@ -105,13 +121,6 @@ class App:
             name = '.'.join((module, name))
         return name
 
-    def register_selector(self, cls):
-        """
-        A method for registering Selectors by module name with the app for
-        serializing/deserializing
-        """
-        self.selectors[self._name(cls)] = cls
-
     def get_selector(self, class_name):
         if class_name not in self.selectors:
             raise UnknownSelectorName(class_name)
@@ -126,7 +135,16 @@ class App:
             raise UnknownSegmentName(segment_name)
         return segment
 
-    def feature(self, cls):
+    def get_applicable_features(self, input_types: List[Type]) -> List[FeatureHandle]:
+        """
+        Returns the registered features which require values of the given input types.
+        """
+        return [
+                handle for handle in self.features.values()
+                if handle.feature.input_types == input_types
+        ]
+
+    def feature(self, cls) -> FeatureFactory:
         """
         # TODO: Clearer docs
         Initializes the wrapped class and returns a handle to the registered
@@ -156,7 +174,7 @@ class App:
         definition = Definition.from_object(obj)
         feature = Feature(definition)
         name = self._name(cls)
-        handle = FeatureHandle(self, name, feature)
+        handle = FeatureFactory(self, name, feature)
         # TODO: Prevent double-write
         self.features[name] = handle
         return handle
@@ -168,22 +186,23 @@ class App:
         """
         return default(fn)
 
-    def boolean(self, fn):
+    def boolean(self, fn) -> FeatureConditional:
         """
-        Similar to `feature` but operates on a function. Initializes the
-        wrapped function and returns a handle to the registered boolean
+        Similar to `feature` but operates on a boolean function.
+        Wraps the function and returns a handle to the registered boolean
         feature.
-
-        The handle has a method, create, which can be invoked to obtain an
-        implementation to use.
 
         Example:
         @my_app.boolean
         def MyFeature() -> bool:
             return True
 
-        This function will be automatically annotated as the default
-        implementation.
+        # Defaults to returning True
+        MyFeature.is_enabled()
+
+        This function will be automatically annotated as the default value,
+        and can be configured to either return True, False or the default value.
+
         """
         if not callable(fn):
             raise ValueError("Boolean feature must be a function")
@@ -192,13 +211,11 @@ class App:
         if return_type != bool:
             raise ValueError(f"Expected bool return type - got {return_type}")
 
-        fn = self.default(fn)
         definition = Definition.from_function(fn)
         feature = Feature(definition)
         name = self._name(fn)
-        handle = FeatureHandle(self, name, feature)
+        handle = FeatureConditional(self, name, feature)
         self.features[name] = handle
-
         return handle
 
     def segment(self, cls):

@@ -27,6 +27,12 @@ class Selector(metaclass=abc.ABCMeta):
         value: The object that will be given to the feature.
         """
 
+    @abc.abstractmethod
+    def used_implementation(self, impl: str, value):
+        """
+        Informs this selector that the given object has used a certain implementation
+        """
+
     @classmethod
     @abc.abstractmethod
     def from_data(cls, app, configuration):
@@ -41,6 +47,32 @@ class Selector(metaclass=abc.ABCMeta):
         """
 
 
+class Default(Selector):
+    """
+    Picks the default implementation of the feature.
+
+    Used to represent the case where no FeatureState exists, and
+    so will never be persisted to storage or configured by a user.
+    """
+    def __init__(self, feature):
+        super().__init__("Default")
+        self.feature = feature
+
+    def select(self, *args, **kwargs) -> str:
+        return self.feature.default_implementation.name
+
+    def used_implementation(self, impl: str, *args):
+        pass
+
+    # TODO: Separate out the distinction between a Selector and a user-created one.
+    @classmethod
+    def from_data(cls, app, configuration):
+        pass
+
+    def serialize_data(self, app) -> dict:
+        pass
+
+
 class Static(Selector):
     """
     Static Selectors return a single implementation based on the
@@ -52,6 +84,9 @@ class Static(Selector):
 
     def select(self, *args, **kwargs) -> str:
         return self.value
+
+    def used_implementation(self, impl: str, *args):
+        pass
 
     @classmethod
     def from_data(cls, app, configuration):
@@ -101,6 +136,9 @@ class Rollout(Selector):
         hash = int(self._hex_hash(key), 16)
         bucket = hash % self.modulo
         return self.population[bisect(self.cum_weights, bucket)]
+
+    def used_implementation(self, impl: str, value: object):
+        pass
 
     @classmethod
     def from_data(cls, app, configuration):
@@ -159,30 +197,29 @@ class Experiment(Selector):
     def __init__(
             self,
             name: str,
-            segment: Segment,
             persister: ExperimentPersister,
             weights: Weights
     ):
         super().__init__(name)
-        self.segment = segment
         self.persister = persister
         self.population = list(weights.keys())
         self.weights = list(weights.values())
 
     def select(self, value: object) -> str:
-        key = self.segment.segment(value)
-        existing_group = self.persister.get_existing_test_group(key)
+        existing_group = self.persister.get_existing_test_group(value)
         if existing_group is not None:
             return existing_group
 
         choice = choices(self.population, self.weights)[0]
-        return self.persister.persist_test_group(key, choice)
+        return choice
+
+    def used_implementation(self, impl: str, value: object):
+        self.persister.persist_test_group(value, impl)
 
     @classmethod
     def from_data(cls, app, configuration):
         return cls(
             name=configuration['name'],
-            segment=app.get_segment(configuration['segment']),
             persister=app.get_persister(configuration['persister']),
             weights=configuration['weights'],
         )
@@ -190,7 +227,6 @@ class Experiment(Selector):
     def serialize_data(self, app):
         return {
             'name': self.name,
-            'segment': self.segment.name,
             'persister': app._name(self.persister),
             'weights': self.weights,
         }
