@@ -49,6 +49,10 @@ class Selector(metaclass=abc.ABCMeta):
 
 class Default(Selector):
     """
+    Picks the default implementation of the feature.
+
+    Used to represent the case where no FeatureState exists, and
+    so will never be persisted to storage or configured by a user.
     """
     def __init__(self, feature):
         super().__init__("Default")
