@@ -186,6 +186,7 @@ class App:
         as the persister.
         """
         self.persisters[self._name(cls)] = cls
+        return cls
 
     def default(self, fn):
         """
