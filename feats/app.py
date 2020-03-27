@@ -102,6 +102,7 @@ class App:
         self.segments: Dict[str, Segment] = {}
         self.features: Dict[str, FeatureHandle] = {}
         self.selectors: Dict[str, Selector] = {}
+        self.persisters: Dict[str, Type[ExperimentPersister]] = {}
         self.storage = storage
 
         for cls in [Experiment, Rollout, Static]:
