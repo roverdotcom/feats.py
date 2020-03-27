@@ -8,7 +8,7 @@ from .feature import Feature
 from .feature import default
 from .meta import Definition
 from .segment import Segment
-from .selector import Experiment, Rollout, Selector, Static, Default
+from .selector import Experiment, Rollout, Selector, Static, Default, ExperimentPersister
 from .state import FeatureState
 
 
