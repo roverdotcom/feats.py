@@ -1,6 +1,7 @@
 import abc
 import hashlib
 from typing import TypeVar
+from typing import Type
 from typing import Generic
 from bisect import bisect
 from itertools import accumulate
