@@ -1,15 +1,17 @@
 from functools import lru_cache
 from inspect import getmro
+from typing import List
 
 from .meta import Definition, Implementation
 
 
 class Segment:
-    def __init__(self, name: str, definition: Definition):
+    def __init__(self, name: str, definition: Definition, options: List[str]=None):
         _check_output_type(definition)
         _check_input_type(definition)
         self.name = name
         self.definition = definition
+        self.options = options
         self.input_mapping = {
             impl.input_types[0]: impl
             for impl in self.definition.implementations.values()

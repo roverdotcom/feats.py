@@ -115,7 +115,17 @@ class SelectorMappingForm(base.Form):
                 required=True
         )
         for segment in segments:
-            self.fields['segment[{}]'.format(segment.name)] = base.CharField(required=True)
+            field = base.CharField(required=True)
+
+            if segment.options is not None:
+                field = base.ChoiceField(
+                    choices=[
+                        (i, opt) for i, opt in enumerate(segment.options)
+                    ],
+                    required=True
+                )
+
+            self.fields['segment[{}]'.format(segment.name)] = field
 
     def get_mapping_entry(self):
         """
