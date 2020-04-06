@@ -190,6 +190,12 @@ class InvalidSegments:
         def reticulate_string(self, value: str) -> int:
             return 0
 
+class OptionsSegment:
+    OPTIONS = ['foo', 'bar']
+
+    def reticulate_string(self, value: str) -> str:
+        return "reticulated string"
+
 
 class InvalidBooleanFeatureAsClass:
     @feats.default
@@ -273,6 +279,10 @@ class AppDefinitionTests(TestCase):
     def test_segments_must_be_class(self):
         with self.assertRaises(ValueError):
             self.app.segment(ValidBooleanFeature)
+
+    def test_segment_with_options(self):
+        segment = self.app.segment(OptionsSegment)
+        self.assertEqual(segment.options, ['foo', 'bar'])
 
     def test_valid_boolean_feature(self):
         fn = ValidBooleanFeature

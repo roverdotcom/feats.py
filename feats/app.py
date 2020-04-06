@@ -239,6 +239,6 @@ class App:
         obj = cls()
         name = self._name(cls)
         definition = Definition.from_object(obj)
-        seg = Segment(name, definition)
+        seg = Segment(name, definition, options=getattr(obj, 'OPTIONS', None))
         self.segments[name] = seg
         return seg
