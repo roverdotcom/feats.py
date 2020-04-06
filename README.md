@@ -158,6 +158,26 @@ class Subdivision:
         return "{}-{}".format(address.country_code, address.subdivision_code)
 ```
 
+It is also possible to designate specific options for a segment. If, for
+example, we wished to create a segment on device type and we knew the two
+options we cared about were `"android"` and `"ios"`, we could create the
+following segment:
+
+```python
+@app.segment
+class UserDevice:
+    """
+    The user device data from the Request, e.g "ios"
+    """
+    OPTIONS = ['ios', 'android']
+
+    def request(self, request: Request) -> str:
+        return request['device']
+```
+
+This allows us to select from that list of `OPTIONS` when we define how this
+segment should be routed to feature implementations.
+
 
 ## Feature Inputs
 
